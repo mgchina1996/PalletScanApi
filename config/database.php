@@ -113,6 +113,18 @@ return [
             // 'encrypt' => env('DB_ENCRYPT', 'yes'),
             // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
         ],
+        'portal' => [
+            'driver' => 'sqlsrv',
+            'url' => env('PORTAL_DB_URL'),
+            'host' => env('PORTAL_DB_HOST', 'localhost'),
+            'port' => env('PORTAL_DB_PORT', '1433'),
+            'database' => env('PORTAL_DB_DATABASE', 'laravel'),
+            'username' => env('PORTAL_DB_USERNAME', 'root'),
+            'password' => env('PORTAL_DB_PASSWORD', ''),
+            'charset' => env('PORTAL_DB_CHARSET', 'utf8'),
+            'prefix' => '',
+            'prefix_indexes' => true
+        ],
 
     ],
 
