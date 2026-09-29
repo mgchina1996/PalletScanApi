@@ -17,7 +17,7 @@ class CartonProductResource extends JsonResource
         return [
             'cartonID' => $this->cartonID,
             'cartonNumber' => $this->cartonNumber,
-            'tpin' => $this->tpin,
+            'products' => $this->products,
         ];
     }
 }

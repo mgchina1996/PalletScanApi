@@ -12,7 +12,7 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
         ->middleware('throttle:10,1')
         ->name('ocr.carton');
     Route::get('locations', LocationController::class)->name('locations.index');
-    Route::get('cartons/{cartonNumber}/products', CartonProductController::class)
+    Route::get('cartons/products', CartonProductController::class)
         ->name('cartons.products.index');
     Route::post('locations/{locationCode}/cartons', [CartonEntryController::class, 'store'])
         ->where('locationCode', 'S[1-6]-A(?:[1-9]|1[0-5])-[A-E][12]')
