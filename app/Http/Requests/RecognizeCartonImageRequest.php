@@ -25,7 +25,7 @@ class RecognizeCartonImageRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'type' => ['required', 'string', Rule::in([Entry::TYPE_CARTON])],
+            'type' => ['required', 'string', Rule::in([Entry::TYPE_CARTON, Entry::TYPE_TPIN])],
             'image' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192'],
         ];
     }

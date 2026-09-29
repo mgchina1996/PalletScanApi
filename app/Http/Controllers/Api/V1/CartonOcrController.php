@@ -7,6 +7,7 @@ use App\Exceptions\OcrConfigurationException;
 use App\Exceptions\OcrRecognitionException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RecognizeCartonImageRequest;
+use App\Models\Entry;
 use App\Services\PortalCartonAvailabilityLookup;
 use Illuminate\Http\JsonResponse;
 
@@ -37,6 +38,21 @@ class CartonOcrController extends Controller
         }
 
         $normalizedText = strtoupper($text);
+
+        if ($request->string('type')->toString() === Entry::TYPE_TPIN) {
+            preg_match_all('/(?<![A-Z0-9])[A-Z0-9]{9}(?![A-Z0-9])/', $normalizedText, $tpinMatches);
+            $tpins = array_values(array_unique(array_filter(
+                $tpinMatches[0],
+                static fn (string $value): bool => ! str_starts_with($value, 'CTN'),
+            )));
+
+            return response()->json([
+                'data' => [
+                    'tpins' => $tpins,
+                    'total' => count($tpins),
+                ],
+            ]);
+        }
 
         preg_match_all(
             '/(?<![A-Z0-9])(?:CTN[\s-]*)+([A-Z0-9]+)(?![A-Z0-9])/',
