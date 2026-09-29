@@ -1,0 +1,12 @@
+{
+    "mcpServers": {
+        "laravel-boost": {
+            "command": "wsl.exe",
+            "args": [
+                "/www/server/php/84/bin/php",
+                "/www/wwwroot/pallet-scan-api/artisan",
+                "boost:mcp"
+            ]
+        }
+    }
+}
