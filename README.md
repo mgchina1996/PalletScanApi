@@ -26,6 +26,12 @@ docker compose --env-file .env.docker up -d --build
 docker compose --env-file .env.docker ps
 ```
 
+After confirming the database connections, run migrations explicitly:
+
+```bash
+docker compose --env-file .env.docker exec app php artisan migrate --force
+```
+
 The application does not publish a host port. Set `NPM_NETWORK` in
 `.env.docker` to the external Docker network used by Nginx Proxy Manager. In
 Nginx Proxy Manager, create a Proxy Host with these forwarding settings:
@@ -43,9 +49,10 @@ docker compose --env-file .env.docker logs -f app nginx
 docker compose --env-file .env.docker exec app php artisan about
 ```
 
-Set `RUN_MIGRATIONS=false` if migrations are managed separately. When Portal
-SQL Server runs on the Docker host, the default `host.docker.internal` address
-works on Docker Desktop and is mapped to the host gateway on Linux.
+Set `RUN_MIGRATIONS=true` only when migrations should run automatically on every
+container start. When Portal SQL Server runs on the Docker host, the default
+`host.docker.internal` address works on Docker Desktop and is mapped to the host
+gateway on Linux.
 
 ## About Laravel
 
