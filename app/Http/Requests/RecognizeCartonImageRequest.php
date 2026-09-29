@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Entry;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class RecognizeCartonImageRequest extends FormRequest
 {
@@ -23,6 +25,7 @@ class RecognizeCartonImageRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'type' => ['required', 'string', Rule::in([Entry::TYPE_CARTON])],
             'image' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192'],
         ];
     }
