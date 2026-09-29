@@ -7,27 +7,22 @@ use App\Http\Requests\StoreProductEntriesRequest;
 use App\Http\Resources\EntryResource;
 use App\Models\Entry;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
 class ProductEntryController extends Controller
 {
-    public function store(StoreProductEntriesRequest $request, string $locationCode, string $type): JsonResponse
+    public function store(StoreProductEntriesRequest $request, string $type): JsonResponse
     {
-        /** @var array<int, array{tpin: string, quantity: int}> $items */
-        $items = $request->validated();
+        /** @var array{locationCode: string, tpin: string, quantity: int} $data */
+        $data = $request->validated();
+        $entry = Entry::create([
+            'location_code' => $data['locationCode'],
+            'type' => $type,
+            'code' => $data['tpin'],
+            'quantity' => $data['quantity'],
+        ]);
 
-        $entries = DB::transaction(fn (): Collection => collect($items)->map(
-            fn (array $item): Entry => Entry::create([
-                'location_code' => $locationCode,
-                'type' => $type,
-                'code' => $item['tpin'],
-                'quantity' => $item['quantity'],
-            ]),
-        ));
-
-        return EntryResource::collection($entries)
+        return (new EntryResource($entry))
             ->response()
             ->setStatusCode(Response::HTTP_CREATED);
     }

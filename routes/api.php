@@ -14,13 +14,9 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
     Route::get('locations', LocationController::class)->name('locations.index');
     Route::get('cartons/products', CartonProductController::class)
         ->name('cartons.products.index');
-    Route::post('locations/{locationCode}/cartons', [CartonEntryController::class, 'store'])
-        ->where('locationCode', 'S[1-6]-A(?:[1-9]|1[0-5])-[A-E][12]')
-        ->name('locations.cartons.store');
-    Route::post('locations/{locationCode}/products/{type}', [ProductEntryController::class, 'store'])
-        ->where([
-            'locationCode' => 'S[1-6]-A(?:[1-9]|1[0-5])-[A-E][12]',
-            'type' => 'tpin|sku',
-        ])
-        ->name('locations.products.store');
+    Route::post('entries/cartons', [CartonEntryController::class, 'store'])
+        ->name('entries.cartons.store');
+    Route::post('entries/products/{type}', [ProductEntryController::class, 'store'])
+        ->where('type', 'tpin|sku')
+        ->name('entries.products.store');
 });
