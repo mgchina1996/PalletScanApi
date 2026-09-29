@@ -44,7 +44,6 @@ volumes:
 
 networks:
   backend:
-    internal: true
   proxy:
     external: true
     name: "${NPM_NETWORK:-nginx-proxy-manager_default}"
