@@ -28,10 +28,8 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
-    'alibaba_cloud' => [
-        'access_key_id' => env('ALIBABA_CLOUD_ACCESS_KEY_ID'),
-        'access_key_secret' => env('ALIBABA_CLOUD_ACCESS_KEY_SECRET'),
-        'ocr_endpoint' => env('ALIBABA_CLOUD_OCR_ENDPOINT', 'ocr-api.cn-hangzhou.aliyuncs.com'),
+    'google_vision' => [
+        'credentials' => env('GOOGLE_VISION_CREDENTIALS'),
     ],
 
     'slack' => [

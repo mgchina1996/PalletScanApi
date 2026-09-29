@@ -19,7 +19,7 @@ docker compose --env-file .env.docker run --rm --entrypoint php app artisan key:
 ```
 
 Put the generated key in `APP_KEY` inside `.env.docker`, configure the Portal
-and Alibaba Cloud credentials, then start the services:
+and Google Vision credentials, then start the services:
 
 ```bash
 docker compose --env-file .env.docker up -d --build

@@ -2,12 +2,10 @@
 
 namespace App\Http\Requests;
 
-use App\Models\Entry;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
-class RecognizeImageRequest extends FormRequest
+class RecognizeCartonImageRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -25,8 +23,7 @@ class RecognizeImageRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'type' => ['required', 'string', Rule::in([Entry::TYPE_CARTON, Entry::TYPE_TPIN])],
-            'image' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,bmp,gif,webp', 'max:10240'],
+            'image' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192'],
         ];
     }
 }

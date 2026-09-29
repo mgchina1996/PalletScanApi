@@ -14,6 +14,7 @@ services:
           - pallet-scan-php
     volumes:
       - app-storage:/var/www/html/storage
+      - /etc/pallet-scan/google-vision.json:/etc/pallet-scan/google-vision.json:ro
     healthcheck:
       test: ["CMD-SHELL", "kill -0 1 && php-fpm -t"]
       interval: 10s
