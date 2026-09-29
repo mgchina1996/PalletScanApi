@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class FindCartonProductsRequest extends FormRequest
 {
@@ -12,7 +13,7 @@ class FindCartonProductsRequest extends FormRequest
     }
 
     /**
-     * @return array<string, list<string>>
+     * @return array<string, array<mixed>>
      */
     public function rules(): array
     {
@@ -20,14 +21,14 @@ class FindCartonProductsRequest extends FormRequest
             'cartonNumber' => [
                 'bail',
                 'required_without:cartonID',
-                'prohibited_with:cartonID',
+                Rule::prohibitedIf(fn (): bool => $this->filled('cartonID')),
                 'string',
                 'max:255',
             ],
             'cartonID' => [
                 'bail',
                 'required_without:cartonNumber',
-                'prohibited_with:cartonNumber',
+                Rule::prohibitedIf(fn (): bool => $this->filled('cartonNumber')),
                 'integer',
                 'min:1',
             ],
