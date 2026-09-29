@@ -30,8 +30,11 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         curl \
         gnupg \
+        libicu72 \
         libicu-dev \
+        libsqlite3-0 \
         libsqlite3-dev \
+        libzip4 \
         libzip-dev \
         unzip \
     && curl -fsSL https://packages.microsoft.com/keys/microsoft.asc \
