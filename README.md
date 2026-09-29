@@ -7,6 +7,46 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## Docker deployment
+
+The application runs behind Nginx with PHP-FPM and connects to SQL Server. The
+PHP image includes Microsoft's ODBC driver and the `pdo_sqlsrv` extension. The
+Laravel `storage` directory is persisted in a named Docker volume.
+
+```bash
+cp .env.docker.example .env.docker
+docker compose --env-file .env.docker run --rm --entrypoint php app artisan key:generate --show
+```
+
+Put the generated key in `APP_KEY` inside `.env.docker`, configure the Portal
+and Alibaba Cloud credentials, then start the services:
+
+```bash
+docker compose --env-file .env.docker up -d --build
+docker compose --env-file .env.docker ps
+```
+
+The application does not publish a host port. Set `NPM_NETWORK` in
+`.env.docker` to the external Docker network used by Nginx Proxy Manager. In
+Nginx Proxy Manager, create a Proxy Host with these forwarding settings:
+
+- Scheme: `http`
+- Forward Hostname: `pallet-scan-api`
+- Forward Port: `80`
+
+Set `APP_URL` to the public HTTPS domain configured in Nginx Proxy Manager.
+Enable SSL there and use its **Force SSL** option. View logs or run Artisan
+with:
+
+```bash
+docker compose --env-file .env.docker logs -f app nginx
+docker compose --env-file .env.docker exec app php artisan about
+```
+
+Set `RUN_MIGRATIONS=false` if migrations are managed separately. When Portal
+SQL Server runs on the Docker host, the default `host.docker.internal` address
+works on Docker Desktop and is mapped to the host gateway on Linux.
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
