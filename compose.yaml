@@ -9,7 +9,9 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
-      - backend
+      backend:
+        aliases:
+          - pallet-scan-php
     volumes:
       - app-storage:/var/www/html/storage
     healthcheck:
