@@ -62,28 +62,6 @@
             background: var(--warning);
         }
 
-        .download {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 20px;
-        }
-
-        .download h2, .download p { margin: 0; }
-        .download p { color: var(--muted); }
-
-        .download-button {
-            flex: 0 0 auto;
-            padding: 12px 20px;
-            border-radius: 10px;
-            background: var(--primary);
-            color: white;
-            font-weight: 700;
-            text-decoration: none;
-        }
-
-        .download-button:hover { background: #1d4ed8; }
-
         .screens {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
@@ -118,73 +96,67 @@
             main { width: min(100% - 18px, 920px); margin-top: 14px; }
             section { padding: 20px 16px; border-radius: 12px; }
             .actions { grid-template-columns: 1fr; }
-            .download { align-items: stretch; flex-direction: column; }
-            .download-button { text-align: center; }
         }
     </style>
 </head>
 <body>
 <header>
     <h1>PalletScan Staff Guide</h1>
-    <p>Quick guide for recording Cartons and TPINs at a pallet location</p>
+    <p>Web guide for recording Cartons and TPINs on mobile phones and tablets</p>
 </header>
 
 <main>
-    <section class="download">
-        <div>
-            <h2>Download PalletScan</h2>
-            <p>Currently available for Android only.</p>
-        </div>
-        <a class="download-button" href="https://content.toolots.com/media/palletscan/PalletScan1.apk">Download Android APK</a>
-    </section>
-
     <section>
         <h2>1. Select a location</h2>
         <ol>
-            <li>Open <strong>Locations</strong> and search for the location, such as <strong>S1-A9</strong>.</li>
-            <li>Select the full location code, such as <strong>S1-A9-C1</strong>.</li>
+            <li>Open <strong>Locations</strong> and search for the location, such as <strong>S1-A13</strong>.</li>
+            <li>Select the complete location code.</li>
             <li>Check <strong>Selected location</strong>, then tap <strong>Start</strong>.</li>
         </ol>
+        <p>Use <strong>Done</strong>, the keyboard Search/Enter key, or select a location to close the mobile keyboard.</p>
         <div class="note">Always confirm that the selected location matches your physical pallet location.</div>
         <div class="screens">
-            <figure><img src="locations.jpg" alt="Location selection screen" loading="lazy"><figcaption>Select and confirm the location</figcaption></figure>
+            <figure><img src="locations.png" alt="Location selection screen" loading="lazy"><figcaption>Select and confirm the location</figcaption></figure>
         </div>
     </section>
 
     <section>
         <h2>2. Record a Carton</h2>
         <ol>
-            <li>Select <strong>Carton</strong>, place the full Carton Number in view, and take a photo.</li>
+            <li>Select <strong>Carton</strong> and tap <strong>Take Photo</strong> or <strong>Choose Photo</strong>.</li>
+            <li>Keep the complete Carton Number clear and inside the frame.</li>
             <li>Select the correct result and tap <strong>Confirm Carton</strong>.</li>
-            <li>If no result is correct, tap <strong>Enter Manually</strong> and enter the full Carton Number.</li>
-            <li>Enter the counted <strong>Actual quantity</strong> for every TPIN in the carton.</li>
-            <li>Check all values, then tap <strong>Save Carton</strong>.</li>
+            <li>If no result is correct, tap <strong>Enter Manually</strong>, enter the complete Carton Number, and confirm it.</li>
+            <li>Enter at least one counted <strong>Actual quantity</strong>.</li>
+            <li>Tap <strong>Save Carton</strong> in the fixed bottom bar.</li>
         </ol>
-        <div class="note">Use whole numbers greater than 0. Do not skip any TPIN listed in the carton.</div>
+        <div class="note">Blank products are not submitted. Every entered quantity must be a whole number greater than 0.</div>
         <div class="screens">
-            <figure><img src="carton-camera.jpg" alt="Photograph Carton screen" loading="lazy"><figcaption>Photograph the label</figcaption></figure>
-            <figure><img src="carton-result.jpg" alt="Carton recognition results" loading="lazy"><figcaption>Select the correct Carton</figcaption></figure>
-            <figure><img src="carton-result-manually.jpg" alt="Manual Carton entry" loading="lazy"><figcaption>Or enter it manually</figcaption></figure>
-            <figure><img src="carton-quantity.jpg" alt="Carton product quantity screen" loading="lazy"><figcaption>Enter actual quantities</figcaption></figure>
-            <figure><img src="carton-save-success.jpg" alt="Carton saved successfully" loading="lazy"><figcaption>Confirm the saved details</figcaption></figure>
+            <figure><img src="cacarton-camera.png" alt="Photograph Carton screen" loading="lazy"><figcaption>Take or choose a photo</figcaption></figure>
+            <figure><img src="carton-result.png" alt="Carton recognition results" loading="lazy"><figcaption>Select the correct Carton</figcaption></figure>
+            <figure><img src="carton-result-manually.png" alt="Manual Carton entry" loading="lazy"><figcaption>Or enter it manually</figcaption></figure>
+            <figure><img src="carton-quantity.png" alt="Carton product quantity screen" loading="lazy"><figcaption>Enter one or more quantities</figcaption></figure>
+            <figure><img src="carton-save-success.png" alt="Carton saved successfully" loading="lazy"><figcaption>Confirm the saved details</figcaption></figure>
         </div>
     </section>
 
     <section>
         <h2>3. Record a TPIN</h2>
         <ol>
-            <li>Select <strong>TPIN</strong>, place the full TPIN in view, and take a photo.</li>
+            <li>Select <strong>TPIN</strong> and tap <strong>Take Photo</strong> or <strong>Choose Photo</strong>.</li>
+            <li>Keep the complete TPIN clear and inside the frame.</li>
             <li>Select the correct result and tap <strong>Confirm TPIN</strong>.</li>
             <li>If no result is correct, tap <strong>Enter Manually</strong> and enter the full TPIN.</li>
             <li>Enter the counted <strong>Actual quantity</strong>.</li>
-            <li>Check the TPIN and quantity, then tap <strong>Save</strong>.</li>
+            <li>Tap <strong>Save</strong> in the fixed bottom bar.</li>
         </ol>
+        <div class="note">The quantity must be a whole number greater than 0.</div>
         <div class="screens">
-            <figure><img src="tpin-camera.jpg" alt="Photograph TPIN screen" loading="lazy"><figcaption>Photograph the TPIN</figcaption></figure>
-            <figure><img src="tpin-result.jpg" alt="TPIN recognition results" loading="lazy"><figcaption>Select the correct TPIN</figcaption></figure>
-            <figure><img src="tpin-result-manually.jpg" alt="Manual TPIN entry" loading="lazy"><figcaption>Or enter it manually</figcaption></figure>
-            <figure><img src="tpin-quantity.jpg" alt="TPIN quantity screen" loading="lazy"><figcaption>Enter actual quantity</figcaption></figure>
-            <figure><img src="tpin-save-success.jpg" alt="TPIN saved successfully" loading="lazy"><figcaption>Confirm the saved details</figcaption></figure>
+            <figure><img src="tpin-camera.png" alt="Photograph TPIN screen" loading="lazy"><figcaption>Take or choose a photo</figcaption></figure>
+            <figure><img src="tpin-result.png" alt="TPIN recognition results" loading="lazy"><figcaption>Select the correct TPIN</figcaption></figure>
+            <figure><img src="tpin-result-manually.png" alt="Manual TPIN entry" loading="lazy"><figcaption>Or enter it manually</figcaption></figure>
+            <figure><img src="tpin-quantity.png" alt="TPIN quantity screen" loading="lazy"><figcaption>Enter actual quantity</figcaption></figure>
+            <figure><img src="tpin-save-success.png" alt="TPIN saved successfully" loading="lazy"><figcaption>Confirm the saved details</figcaption></figure>
         </div>
     </section>
 
@@ -195,6 +167,16 @@
             <div class="action"><strong>Complete Location</strong>Finish this location and return to location selection.</div>
         </div>
         <div class="note">When you move to another pallet location, always choose <strong>Complete Location</strong> and select the new location.</div>
+    </section>
+
+    <section>
+        <h2>5. Records</h2>
+        <p>Open <strong>Records</strong> from the bottom navigation to review saved entries.</p>
+        <ul>
+            <li>Filter by <strong>All</strong>, <strong>Carton</strong>, or <strong>TPIN</strong>.</li>
+            <li>Search by Carton Number or TPIN.</li>
+            <li>Select an entry to review its location, time, products, and quantities.</li>
+        </ul>
     </section>
 
 </main>
