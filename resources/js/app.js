@@ -12,6 +12,7 @@ const state = {
     candidates: [],
     selectedCandidate: null,
     manualCode: '',
+    isManualEntry: false,
     products: [],
     quantities: {},
     quantity: '',
@@ -182,6 +183,7 @@ function resetScan() {
     state.candidates = [];
     state.selectedCandidate = null;
     state.manualCode = '';
+    state.isManualEntry = false;
     state.products = [];
     state.quantities = {};
     state.quantity = '';
@@ -257,8 +259,14 @@ function renderResults() {
         return `<button type="button" data-candidate-index="${index}" class="flex min-h-20 w-full items-center gap-3 rounded-xl border p-4 text-left ${selected ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-100' : 'border-slate-200 bg-white'}"><span class="grid h-6 w-6 place-items-center rounded-full border-2 ${selected ? 'border-blue-600' : 'border-slate-400'}">${selected ? '<span class="h-3 w-3 rounded-full bg-blue-600"></span>' : ''}</span><span class="min-w-0 flex-1"><strong class="block truncate text-lg">${escapeHtml(code)}</strong><span class="text-xs text-slate-500">${escapeHtml(detail)}</span></span></button>`;
     }).join('');
 
+    const manualEntry = state.isManualEntry ? `
+        <div class="mt-4 rounded-2xl bg-white p-4 shadow-sm sm:p-6">
+            <label for="manual-code" class="text-sm font-semibold">${isCarton ? 'Carton Number' : 'TPIN'}</label>
+            <input id="manual-code" value="${escapeHtml(state.manualCode)}" autocapitalize="characters" enterkeyhint="done" class="mt-2 h-13 w-full rounded-xl border-2 border-blue-500 px-4 uppercase outline-none ring-4 ring-blue-100" placeholder="ENTER MANUALLY">
+        </div>` : '';
+
     return shell(`
-        <div class="mx-auto max-w-3xl">
+        <div class="mx-auto max-w-3xl pb-24">
             <div class="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
                 ${currentLocation()}
                 <div class="mt-4 flex items-center gap-2 text-sm text-slate-500">${isCarton ? icons.carton : icons.barcode}<strong class="text-slate-900">${isCarton ? 'Carton' : 'TPIN'} recognition results</strong></div>
@@ -266,13 +274,12 @@ function renderResults() {
             </div>
             ${alertMessage()}
             <div class="mt-4 grid gap-3 sm:grid-cols-2">${candidates || '<div class="col-span-full rounded-xl bg-white p-8 text-center text-slate-500">No matching result was found.</div>'}</div>
-            <div class="mt-4 rounded-2xl bg-white p-4 shadow-sm sm:p-6">
-                <label for="manual-code" class="text-sm font-semibold">${isCarton ? 'Carton Number' : 'TPIN'}</label>
-                <input id="manual-code" value="${escapeHtml(state.manualCode)}" autocapitalize="characters" class="mt-2 h-13 w-full rounded-xl border border-slate-300 px-4 uppercase outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100" placeholder="Enter manually">
-                <div class="mt-4 grid grid-cols-2 gap-3">
-                    ${button('Retake', 'retake', { secondary: true })}
-                    ${button(`Confirm ${isCarton ? 'Carton' : 'TPIN'}`, 'confirm-result')}
-                </div>
+            ${manualEntry}
+        </div>
+        <div class="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 p-3 shadow-[0_-8px_24px_rgba(15,23,42,.08)] backdrop-blur">
+            <div class="mx-auto grid max-w-3xl grid-cols-2 gap-3">
+                ${button(state.isManualEntry ? 'Choose Candidate' : 'Enter Manually', state.isManualEntry ? 'choose-candidate' : 'enter-manual', { secondary: true })}
+                ${button(`Confirm ${isCarton ? 'Carton' : 'TPIN'}`, 'confirm-result')}
             </div>
         </div>`, { title: 'Recognition Results', back: true, subtitle: state.selectedLocation });
 }
@@ -287,7 +294,7 @@ function renderCount() {
         </label>`).join('');
 
     return shell(`
-        <div class="mx-auto max-w-3xl">
+        <div class="mx-auto max-w-3xl pb-24">
             ${alertMessage()}
             <div class="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
                 ${currentLocation()}
@@ -297,7 +304,9 @@ function renderCount() {
                 <div class="mb-3"><h2 class="text-lg font-bold">${isCarton ? 'Products in this carton' : 'Actual quantity'}</h2><p class="text-sm text-slate-500">${isCarton ? 'Enter at least one quantity. Leave products blank if they are not being submitted.' : 'Enter the quantity physically counted at this location.'}</p></div>
                 ${isCarton ? `<div class="grid gap-3 sm:grid-cols-2">${productFields}</div>` : `<div class="rounded-2xl bg-white p-5 shadow-sm"><label class="text-sm font-semibold" for="single-quantity">Actual quantity</label><input id="single-quantity" type="number" min="1" step="1" inputmode="numeric" value="${escapeHtml(state.quantity)}" class="mt-2 h-14 w-full rounded-xl border border-slate-300 px-4 text-xl font-bold outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"></div>`}
             </section>
-            <div class="mt-5 grid grid-cols-2 gap-3">${button('Back', 'back', { secondary: true })}${button(state.busy ? 'Saving…' : isCarton ? 'Save Carton' : 'Save', 'save-entry', { disabled: state.busy })}</div>
+        </div>
+        <div class="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 p-3 shadow-[0_-8px_24px_rgba(15,23,42,.08)] backdrop-blur">
+            <div class="mx-auto grid max-w-3xl grid-cols-2 gap-3">${button('Back', 'back', { secondary: true })}${button(state.busy ? 'Saving…' : isCarton ? 'Save Carton' : 'Save', 'save-entry', { disabled: state.busy })}</div>
         </div>`, { title: isCarton ? 'Carton Product Quantities' : 'TPIN Entry', back: true, subtitle: state.selectedLocation });
 }
 
@@ -575,6 +584,7 @@ app.addEventListener('click', (event) => {
     if (candidateIndex !== undefined) {
         state.selectedCandidate = state.candidates[Number(candidateIndex)];
         state.manualCode = '';
+        state.isManualEntry = false;
         render();
     }
     if (recordType && recordType !== state.recordType) {
@@ -597,6 +607,17 @@ app.addEventListener('click', (event) => {
     if (action === 'retake') {
         resetScan();
         setScreen('scanner');
+    }
+    if (action === 'enter-manual') {
+        state.isManualEntry = true;
+        state.selectedCandidate = null;
+        render();
+        document.querySelector('#manual-code')?.focus();
+    }
+    if (action === 'choose-candidate') {
+        state.isManualEntry = false;
+        state.manualCode = '';
+        render();
     }
     if (action === 'confirm-result') confirmResult();
     if (action === 'save-entry') saveEntry();
