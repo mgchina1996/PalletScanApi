@@ -266,7 +266,7 @@ function renderResults() {
         </div>` : '';
 
     return shell(`
-        <div class="mx-auto max-w-3xl pb-24">
+        <div class="mx-auto max-w-3xl pb-28">
             <div class="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
                 ${currentLocation()}
                 <div class="mt-4 flex items-center gap-2 text-sm text-slate-500">${isCarton ? icons.carton : icons.barcode}<strong class="text-slate-900">${isCarton ? 'Carton' : 'TPIN'} recognition results</strong></div>
@@ -276,8 +276,8 @@ function renderResults() {
             <div class="mt-4 grid gap-3 sm:grid-cols-2">${candidates || '<div class="col-span-full rounded-xl bg-white p-8 text-center text-slate-500">No matching result was found.</div>'}</div>
             ${manualEntry}
         </div>
-        <div class="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 p-3 shadow-[0_-8px_24px_rgba(15,23,42,.08)] backdrop-blur">
-            <div class="mx-auto grid max-w-3xl grid-cols-2 gap-3">
+        <div class="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 py-4 shadow-[0_-8px_24px_rgba(15,23,42,.08)] backdrop-blur sm:px-6">
+            <div class="mx-auto grid max-w-3xl grid-cols-2 gap-4">
                 ${button(state.isManualEntry ? 'Choose Candidate' : 'Enter Manually', state.isManualEntry ? 'choose-candidate' : 'enter-manual', { secondary: true })}
                 ${button(`Confirm ${isCarton ? 'Carton' : 'TPIN'}`, 'confirm-result')}
             </div>
@@ -294,7 +294,7 @@ function renderCount() {
         </label>`).join('');
 
     return shell(`
-        <div class="mx-auto max-w-3xl pb-24">
+        <div class="mx-auto max-w-3xl pb-28">
             ${alertMessage()}
             <div class="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
                 ${currentLocation()}
@@ -305,8 +305,8 @@ function renderCount() {
                 ${isCarton ? `<div class="grid gap-3 sm:grid-cols-2">${productFields}</div>` : `<div class="rounded-2xl bg-white p-5 shadow-sm"><label class="text-sm font-semibold" for="single-quantity">Actual quantity</label><input id="single-quantity" type="number" min="1" step="1" inputmode="numeric" value="${escapeHtml(state.quantity)}" class="mt-2 h-14 w-full rounded-xl border border-slate-300 px-4 text-xl font-bold outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"></div>`}
             </section>
         </div>
-        <div class="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 p-3 shadow-[0_-8px_24px_rgba(15,23,42,.08)] backdrop-blur">
-            <div class="mx-auto grid max-w-3xl grid-cols-2 gap-3">${button('Back', 'back', { secondary: true })}${button(state.busy ? 'Saving…' : isCarton ? 'Save Carton' : 'Save', 'save-entry', { disabled: state.busy })}</div>
+        <div class="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 py-4 shadow-[0_-8px_24px_rgba(15,23,42,.08)] backdrop-blur sm:px-6">
+            <div class="mx-auto grid max-w-3xl grid-cols-2 gap-4">${button('Back', 'back', { secondary: true })}${button(state.busy ? 'Saving…' : isCarton ? 'Save Carton' : 'Save', 'save-entry', { disabled: state.busy })}</div>
         </div>`, { title: isCarton ? 'Carton Product Quantities' : 'TPIN Entry', back: true, subtitle: state.selectedLocation });
 }
 
