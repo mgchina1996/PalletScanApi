@@ -121,6 +121,53 @@ async function api(url, options = {}) {
     return body;
 }
 
+function loadImage(url) {
+    return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = () => reject(new Error('The selected image could not be opened.'));
+        image.src = url;
+    });
+}
+
+function canvasToBlob(canvas) {
+    return new Promise((resolve, reject) => {
+        canvas.toBlob(
+            (blob) => blob ? resolve(blob) : reject(new Error('The image could not be prepared for upload.')),
+            'image/jpeg',
+            0.84,
+        );
+    });
+}
+
+async function prepareImage(file) {
+    if (!file.type.startsWith('image/')) throw new Error('Choose a JPG, PNG, or WebP image.');
+
+    const sourceUrl = URL.createObjectURL(file);
+
+    try {
+        const image = await loadImage(sourceUrl);
+        const maximumDimension = 1920;
+        const scale = Math.min(1, maximumDimension / Math.max(image.naturalWidth, image.naturalHeight));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+        const context = canvas.getContext('2d');
+
+        if (!context) throw new Error('Image processing is not supported by this browser.');
+
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        const blob = await canvasToBlob(canvas);
+
+        if (blob.size > 8 * 1024 * 1024) throw new Error('The image is still too large. Retake it at a lower resolution.');
+
+        const baseName = file.name.replace(/\.[^.]+$/, '') || 'pallet-scan';
+        return new File([blob], `${baseName}.jpg`, { type: 'image/jpeg' });
+    } finally {
+        URL.revokeObjectURL(sourceUrl);
+    }
+}
+
 function setScreen(screen) {
     state.screen = screen;
     state.error = '';
@@ -348,9 +395,10 @@ async function recognize(file) {
     render();
 
     try {
+        const uploadFile = await prepareImage(file);
         const data = new FormData();
         data.append('type', state.scanType);
-        data.append('image', file);
+        data.append('image', uploadFile);
         const response = await api('/api/v1/ocr/carton', { method: 'POST', body: data });
         state.candidates = state.scanType === 'carton' ? response.data.cartons : response.data.tpins;
         state.selectedCandidate = state.candidates.length === 1 ? state.candidates[0] : null;
@@ -558,9 +606,13 @@ app.addEventListener('click', (event) => {
 
 app.addEventListener('input', (event) => {
     if (event.target.id === 'location-search') {
+        const selectionStart = event.target.selectionStart ?? event.target.value.length;
+        const selectionEnd = event.target.selectionEnd ?? selectionStart;
         state.locationSearch = event.target.value;
         render();
-        document.querySelector('#location-search')?.focus();
+        const searchInput = document.querySelector('#location-search');
+        searchInput?.focus();
+        searchInput?.setSelectionRange(selectionStart, selectionEnd);
     }
     if (event.target.id === 'manual-code') {
         state.manualCode = event.target.value.toUpperCase();
