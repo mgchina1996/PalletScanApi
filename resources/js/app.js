@@ -201,10 +201,10 @@ function renderLocations() {
         <section class="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
             <div class="relative">
                 <span class="pointer-events-none absolute inset-y-0 left-4 grid place-items-center text-slate-400">${icons.search}</span>
-                <input id="location-search" value="${escapeHtml(state.locationSearch)}" autocomplete="off" class="h-14 w-full rounded-xl border-2 border-blue-500 bg-white pr-12 pl-12 text-lg font-semibold outline-none focus:ring-4 focus:ring-blue-100" placeholder="e.g. S1 or S1-A1">
+                <input id="location-search" value="${escapeHtml(state.locationSearch)}" autocomplete="off" enterkeyhint="search" class="h-14 w-full rounded-xl border-2 border-blue-500 bg-white pr-12 pl-12 text-lg font-semibold outline-none focus:ring-4 focus:ring-blue-100" placeholder="e.g. S1 or S1-A1">
                 ${state.locationSearch ? '<button type="button" data-action="clear-location-search" class="absolute inset-y-0 right-3 px-2 text-2xl text-slate-400" aria-label="Clear">×</button>' : ''}
             </div>
-            <div class="mt-2 flex justify-between text-xs text-slate-500"><span>Keep typing to narrow the results</span><strong class="text-blue-600">${locations.length} locations</strong></div>
+            <div class="mt-2 flex items-center justify-between gap-3 text-xs text-slate-500"><span>Keep typing to narrow the results</span><span class="flex items-center gap-3"><strong class="text-blue-600">${locations.length} locations</strong>${state.locationSearch ? '<button type="button" data-action="finish-location-search" class="rounded-lg bg-blue-50 px-3 py-1.5 font-bold text-blue-700">Done</button>' : ''}</span></div>
         </section>
         ${alertMessage()}
         <section class="mt-4">
@@ -294,7 +294,7 @@ function renderCount() {
                 <div class="mt-4 rounded-xl border border-slate-200 p-4"><div class="text-xs text-slate-500">${isCarton ? 'Carton Number' : 'TPIN'}</div><div class="mt-1 text-xl font-bold">${escapeHtml(code)}</div></div>
             </div>
             <section class="mt-5">
-                <div class="mb-3"><h2 class="text-lg font-bold">${isCarton ? 'Products in this carton' : 'Actual quantity'}</h2><p class="text-sm text-slate-500">Enter the quantity physically counted at this location.</p></div>
+                <div class="mb-3"><h2 class="text-lg font-bold">${isCarton ? 'Products in this carton' : 'Actual quantity'}</h2><p class="text-sm text-slate-500">${isCarton ? 'Enter at least one quantity. Leave products blank if they are not being submitted.' : 'Enter the quantity physically counted at this location.'}</p></div>
                 ${isCarton ? `<div class="grid gap-3 sm:grid-cols-2">${productFields}</div>` : `<div class="rounded-2xl bg-white p-5 shadow-sm"><label class="text-sm font-semibold" for="single-quantity">Actual quantity</label><input id="single-quantity" type="number" min="1" step="1" inputmode="numeric" value="${escapeHtml(state.quantity)}" class="mt-2 h-14 w-full rounded-xl border border-slate-300 px-4 text-xl font-bold outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"></div>`}
             </section>
             <div class="mt-5 grid grid-cols-2 gap-3">${button('Back', 'back', { secondary: true })}${button(state.busy ? 'Saving…' : isCarton ? 'Save Carton' : 'Save', 'save-entry', { disabled: state.busy })}</div>
@@ -458,9 +458,18 @@ async function saveEntry() {
     let body;
 
     if (state.scanType === 'carton') {
-        const products = state.products.map((product) => ({ tpin: product.tpin, quantity: positiveInteger(state.quantities[product.tpin]) }));
+        const enteredProducts = state.products.filter((product) => String(state.quantities[product.tpin] ?? '').trim() !== '');
+
+        if (enteredProducts.length === 0) {
+            state.error = 'Enter a quantity for at least one product.';
+            render();
+            return;
+        }
+
+        const products = enteredProducts.map((product) => ({ tpin: product.tpin, quantity: positiveInteger(state.quantities[product.tpin]) }));
+
         if (products.some((product) => product.quantity === null)) {
-            state.error = 'Enter a whole number greater than 0 for every product.';
+            state.error = 'Each entered quantity must be a whole number greater than 0.';
             render();
             return;
         }
@@ -554,6 +563,7 @@ app.addEventListener('click', (event) => {
     const entryId = event.target.closest('[data-entry-id]')?.dataset.entryId;
 
     if (location) {
+        document.querySelector('#location-search')?.blur();
         state.selectedLocation = location;
         render();
     }
@@ -577,6 +587,7 @@ app.addEventListener('click', (event) => {
         state.locationSearch = '';
         render();
     }
+    if (action === 'finish-location-search') document.querySelector('#location-search')?.blur();
     if (action === 'start-scan' && state.selectedLocation) {
         resetScan();
         setScreen('scanner');
@@ -633,6 +644,7 @@ app.addEventListener('change', (event) => {
 });
 
 app.addEventListener('keyup', (event) => {
+    if (event.target.id === 'location-search' && event.key === 'Enter') event.target.blur();
     if (event.target.id === 'record-search' && event.key === 'Enter') {
         state.recordSearch = event.target.value;
         loadRecords();
