@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PalletScan Staff Guide</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --primary: #2563eb;
+            --ink: #172033;
+            --muted: #667085;
+            --line: #e5e7eb;
+            --soft: #f5f7fb;
+            --warning: #fff8e6;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: var(--soft);
+            color: var(--ink);
+            font: 16px/1.6 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        header {
+            background: #102a56;
+            color: white;
+            padding: 42px 20px;
+            text-align: center;
+        }
+
+        header h1 { margin: 0 0 6px; font-size: clamp(28px, 5vw, 42px); }
+        header p { margin: 0; color: #dbe7ff; }
+
+        main {
+            width: min(920px, calc(100% - 28px));
+            margin: 28px auto 56px;
+        }
+
+        section {
+            margin: 18px 0;
+            padding: 26px;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            background: white;
+            box-shadow: 0 8px 28px rgb(16 42 86 / 6%);
+        }
+
+        h2 { margin: 0 0 14px; font-size: 24px; }
+        h3 { margin: 24px 0 8px; font-size: 18px; }
+        ol, ul { margin: 10px 0; padding-left: 24px; }
+        li + li { margin-top: 6px; }
+        strong { color: #0f3980; }
+
+        .note {
+            margin-top: 16px;
+            padding: 12px 14px;
+            border-left: 4px solid #f59e0b;
+            border-radius: 8px;
+            background: var(--warning);
+        }
+
+        .screens {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        figure { margin: 0; text-align: center; }
+        img {
+            width: 100%;
+            max-width: 280px;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            box-shadow: 0 6px 18px rgb(16 42 86 / 10%);
+        }
+        figcaption { margin-top: 7px; color: var(--muted); font-size: 14px; }
+
+        .actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .action { padding: 14px; border-radius: 10px; background: var(--soft); }
+        .action strong { display: block; }
+
+        footer { color: var(--muted); text-align: center; padding: 0 20px 30px; }
+
+        @media (max-width: 560px) {
+            header { padding: 30px 16px; }
+            main { width: min(100% - 18px, 920px); margin-top: 14px; }
+            section { padding: 20px 16px; border-radius: 12px; }
+            .actions { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <h1>PalletScan Staff Guide</h1>
+    <p>Quick guide for recording Cartons and TPINs at a pallet location</p>
+</header>
+
+<main>
+    <section>
+        <h2>1. Select a location</h2>
+        <ol>
+            <li>Open <strong>Locations</strong> and search for the location, such as <strong>S1-A9</strong>.</li>
+            <li>Select the full location code, such as <strong>S1-A9-C1</strong>.</li>
+            <li>Check <strong>Selected location</strong>, then tap <strong>Start</strong>.</li>
+        </ol>
+        <div class="note">Always confirm that the selected location matches your physical pallet location.</div>
+        <div class="screens">
+            <figure><img src="locations.jpg" alt="Location selection screen" loading="lazy"><figcaption>Select and confirm the location</figcaption></figure>
+        </div>
+    </section>
+
+    <section>
+        <h2>2. Record a Carton</h2>
+        <ol>
+            <li>Select <strong>Carton</strong>, place the full Carton Number in view, and take a photo.</li>
+            <li>Select the correct result and tap <strong>Confirm Carton</strong>.</li>
+            <li>If no result is correct, tap <strong>Enter Manually</strong> and enter the full Carton Number.</li>
+            <li>Enter the counted <strong>Actual quantity</strong> for every TPIN in the carton.</li>
+            <li>Check all values, then tap <strong>Save Carton</strong>.</li>
+        </ol>
+        <div class="note">Use whole numbers greater than 0. Do not skip any TPIN listed in the carton.</div>
+        <div class="screens">
+            <figure><img src="carton-camera.jpg" alt="Photograph Carton screen" loading="lazy"><figcaption>Photograph the label</figcaption></figure>
+            <figure><img src="carton-result.jpg" alt="Carton recognition results" loading="lazy"><figcaption>Select the correct Carton</figcaption></figure>
+            <figure><img src="carton-result-manually.jpg" alt="Manual Carton entry" loading="lazy"><figcaption>Or enter it manually</figcaption></figure>
+            <figure><img src="carton-quantity.jpg" alt="Carton product quantity screen" loading="lazy"><figcaption>Enter actual quantities</figcaption></figure>
+            <figure><img src="carton-save-success.jpg" alt="Carton saved successfully" loading="lazy"><figcaption>Confirm the saved details</figcaption></figure>
+        </div>
+    </section>
+
+    <section>
+        <h2>3. Record a TPIN</h2>
+        <ol>
+            <li>Select <strong>TPIN</strong>, place the full TPIN in view, and take a photo.</li>
+            <li>Select the correct result and tap <strong>Confirm TPIN</strong>.</li>
+            <li>If no result is correct, tap <strong>Enter Manually</strong> and enter the full TPIN.</li>
+            <li>Enter the counted <strong>Actual quantity</strong>.</li>
+            <li>Check the TPIN and quantity, then tap <strong>Save</strong>.</li>
+        </ol>
+        <div class="screens">
+            <figure><img src="tpin-camera.jpg" alt="Photograph TPIN screen" loading="lazy"><figcaption>Photograph the TPIN</figcaption></figure>
+            <figure><img src="tpin-result.jpg" alt="TPIN recognition results" loading="lazy"><figcaption>Select the correct TPIN</figcaption></figure>
+            <figure><img src="tpin-result-manually.jpg" alt="Manual TPIN entry" loading="lazy"><figcaption>Or enter it manually</figcaption></figure>
+            <figure><img src="tpin-quantity.jpg" alt="TPIN quantity screen" loading="lazy"><figcaption>Enter actual quantity</figcaption></figure>
+            <figure><img src="tpin-save-success.jpg" alt="TPIN saved successfully" loading="lazy"><figcaption>Confirm the saved details</figcaption></figure>
+        </div>
+    </section>
+
+    <section>
+        <h2>4. After saving</h2>
+        <div class="actions">
+            <div class="action"><strong>Continue Scanning</strong>Keep the current location and scan another Carton or TPIN.</div>
+            <div class="action"><strong>Complete Location</strong>Finish this location and return to location selection.</div>
+        </div>
+        <div class="note">When you move to another pallet location, always choose <strong>Complete Location</strong> and select the new location.</div>
+    </section>
+
+    <section>
+        <h2>5. Quick troubleshooting</h2>
+        <ul>
+            <li><strong>No correct result:</strong> retake the photo in better light or use manual entry.</li>
+            <li><strong>Confirm/Save is disabled:</strong> select a result and enter all required quantities.</li>
+            <li><strong>Save does not respond:</strong> check the network and do not tap Save repeatedly.</li>
+            <li><strong>Wrong data was saved:</strong> note the location, code, and quantity, then contact a supervisor. Do not create another entry to cancel it.</li>
+        </ul>
+    </section>
+</main>
+
+<footer>PalletScan · Staff operating guide</footer>
+</body>
+</html>
