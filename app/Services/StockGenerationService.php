@@ -59,11 +59,6 @@ class StockGenerationService
             throw new \RuntimeException("Carton not found in portal for CartonNumber: {$entry->code}");
         }
 
-        $bin = Bin::where('CartonID', $carton->CartonID)->first();
-        if ($bin === null) {
-            throw new \RuntimeException("Bin not found in portal for CartonID: {$carton->CartonID}");
-        }
-
         $itemIds = [];
         foreach ($entry->products as $product) {
             $itemId = Item::where('TPIN', $product->tpin)->value('ItemID');
@@ -73,7 +68,18 @@ class StockGenerationService
             $itemIds[$product->tpin] = $itemId;
         }
 
-        $logs = DB::connection('portal')->transaction(function () use ($entry, $bin, $itemIds): array {
+        $logs = DB::connection('portal')->transaction(function () use ($entry, $carton, $itemIds): array {
+            $bin = Bin::where('CartonID', $carton->CartonID)->first();
+            if ($bin === null) {
+                $bin = Bin::create([
+                    'BinNumber' => $entry->location_code.'-'.$carton->CartonID,
+                    'LocationID' => self::LOCATION_ID,
+                    'IsDynamic' => 1,
+                    'CartonID' => $carton->CartonID,
+                    'CreatedOn' => now('UTC'),
+                ]);
+            }
+
             $records = [];
 
             foreach ($entry->products as $product) {
@@ -84,19 +90,29 @@ class StockGenerationService
                     ->first();
 
                 if ($detail === null) {
-                    throw new \RuntimeException(
-                        "RealtimeInventoryDetail not found for BinID {$bin->BinID} and ItemID {$itemId}"
-                    );
+                    $detail = RealtimeInventoryDetail::create([
+                        'ItemId' => $itemId,
+                        'LocationId' => self::LOCATION_ID,
+                        'BinId' => $bin->BinID,
+                        'QtyOnHand' => $product->quantity,
+                        'QtyAvailable' => $product->quantity,
+                        'CreationTime' => now('UTC'),
+                        'LastModificationTime' => now('UTC'),
+                    ]);
+                    $beforeOnHand = null;
+                    $beforeAvailable = null;
+                    $action = 'created';
+                } else {
+                    $beforeOnHand = $detail->QtyOnHand;
+                    $beforeAvailable = $detail->QtyAvailable;
+
+                    $detail->update([
+                        'QtyOnHand' => $product->quantity,
+                        'QtyAvailable' => $product->quantity,
+                        'LastModificationTime' => now('UTC'),
+                    ]);
+                    $action = 'updated';
                 }
-
-                $beforeOnHand = $detail->QtyOnHand;
-                $beforeAvailable = $detail->QtyAvailable;
-
-                $detail->update([
-                    'QtyOnHand' => $product->quantity,
-                    'QtyAvailable' => $product->quantity,
-                    'LastModificationTime' => now('UTC'),
-                ]);
 
                 $this->markItemStockForSync($itemId);
 
@@ -105,7 +121,7 @@ class StockGenerationService
                     'entry_id' => $entry->id,
                     'type' => $entry->type,
                     'code' => $entry->code,
-                    'action' => 'updated',
+                    'action' => $action,
                     'carton_id' => (int) $bin->CartonID,
                     'bin_id' => (int) $bin->BinID,
                     'item_id' => (int) $itemId,
