@@ -17,11 +17,7 @@ class StoreCartonEntriesRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'locationCode' => [
-                'required',
-                'string',
-                'regex:/\AS[1-6]-A(?:[1-9]|1[0-5])-[A-E][12]\z/',
-            ],
+            'locationCode' => ['required', 'string', 'max:255'],
             'cartonNumber' => [
                 'required',
                 'regex:/\A(?:CTN[A-Z0-9]+|[0-9]{5,6})\z/i',

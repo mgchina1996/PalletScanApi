@@ -17,11 +17,7 @@ class StoreProductEntriesRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'locationCode' => [
-                'required',
-                'string',
-                'regex:/\AS[1-6]-A(?:[1-9]|1[0-5])-[A-E][12]\z/',
-            ],
+            'locationCode' => ['required', 'string', 'max:255'],
             'tpin' => ['required', 'string', 'max:255'],
             'quantity' => ['required', 'integer', 'min:1'],
         ];
