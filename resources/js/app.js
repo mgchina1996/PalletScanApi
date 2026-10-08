@@ -192,12 +192,25 @@ function resetScan() {
 
 function renderLocations() {
     const query = state.locationSearch.trim().toUpperCase();
-    const locations = state.locations.filter((location) => location.startsWith(query));
-    const cards = locations.map((location) => `
-        <button type="button" data-location="${escapeHtml(location)}" class="flex min-h-16 items-center justify-between rounded-xl border px-4 text-left transition ${state.selectedLocation === location ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-100' : 'border-slate-200 bg-white hover:border-blue-300'}">
-            <span class="text-lg font-bold ${state.selectedLocation === location ? 'text-blue-700' : 'text-slate-900'}">${escapeHtml(location)}</span>
-            <span class="text-sm font-semibold ${state.selectedLocation === location ? 'text-blue-600' : 'text-slate-400'}">${state.selectedLocation === location ? 'Selected' : '›'}</span>
-        </button>`).join('');
+    const locations = state.locations.filter((location) => !query || location.code.startsWith(query));
+
+    const sectionButtons = [
+        { key: '', label: 'All' },
+        ...[1, 2, 3, 4, 5, 6].map((n) => ({ key: `S${n}-`, label: `S${n}` })),
+        ...[1, 2, 3].map((n) => ({ key: `N${n}-`, label: `N${n}` })),
+    ].map(({ key, label }) => {
+        const active = key === '' ? !query : query === key;
+        return `<button type="button" data-section="${key}" class="min-h-9 rounded-lg px-3 text-sm font-bold transition ${active ? 'bg-blue-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:text-blue-700'}">${label}</button>`;
+    }).join('');
+
+    const cards = locations.map((location) => {
+        const code = location.code;
+        return `
+        <button type="button" data-location="${escapeHtml(code)}" class="flex min-h-16 items-center justify-between rounded-xl border px-4 text-left transition ${state.selectedLocation === code ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-100' : 'border-slate-200 bg-white hover:border-blue-300'}">
+            <span class="text-lg font-bold ${state.selectedLocation === code ? 'text-blue-700' : 'text-slate-900'}">${escapeHtml(code)}</span>
+            <span class="text-sm font-semibold ${state.selectedLocation === code ? 'text-blue-600' : 'text-slate-400'}">${state.selectedLocation === code ? 'Selected' : '›'}</span>
+        </button>`;
+    }).join('');
 
     const content = `
         <section class="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
@@ -206,11 +219,12 @@ function renderLocations() {
                 <input id="location-search" value="${escapeHtml(state.locationSearch)}" autocomplete="off" enterkeyhint="search" class="h-14 w-full rounded-xl border-2 border-blue-500 bg-white pr-12 pl-12 text-lg font-semibold outline-none focus:ring-4 focus:ring-blue-100" placeholder="e.g. S1 or S1-A1">
                 ${state.locationSearch ? '<button type="button" data-action="clear-location-search" class="absolute inset-y-0 right-3 px-2 text-2xl text-slate-400" aria-label="Clear">×</button>' : ''}
             </div>
-            <div class="mt-2 flex items-center justify-between gap-3 text-xs text-slate-500"><span>Keep typing to narrow the results</span><span class="flex items-center gap-3"><strong class="text-blue-600">${locations.length} locations</strong>${state.locationSearch ? '<button type="button" data-action="finish-location-search" class="rounded-lg bg-blue-50 px-3 py-1.5 font-bold text-blue-700">Done</button>' : ''}</span></div>
+            <div class="mt-3 flex flex-wrap gap-2">${sectionButtons}</div>
+            <div class="mt-2 flex items-center justify-between gap-3 text-xs text-slate-500"><span>${query ? `Filtered by <span class="font-semibold text-blue-600">${query}</span>` : 'Showing all locations'}</span><span class="flex items-center gap-3"><strong class="text-blue-600">${locations.length} locations</strong>${state.locationSearch ? '<button type="button" data-action="finish-location-search" class="rounded-lg bg-blue-50 px-3 py-1.5 font-bold text-blue-700">Done</button>' : ''}</span></div>
         </section>
         ${alertMessage()}
         <section class="mt-4">
-            ${state.busy ? loading('Loading pallet locations') : locations.length ? `<div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">${cards}</div>` : '<div class="rounded-2xl bg-white p-12 text-center shadow-sm"><strong>No pallet locations found</strong><p class="mt-2 text-sm text-slate-500">Valid locations range from S1-A1-A1 to S6-A15-E2.</p></div>'}
+            ${state.busy ? loading('Loading pallet locations') : locations.length ? `<div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">${cards}</div>` : '<div class="rounded-2xl bg-white p-12 text-center shadow-sm"><strong>No pallet locations found</strong><p class="mt-2 text-sm text-slate-500">Try a different section or search term.</p></div>'}
         </section>
         <div class="sticky bottom-20 mt-5 flex items-center gap-4 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-xl backdrop-blur sm:bottom-24">
             <div class="min-w-0 flex-1"><div class="text-xs text-slate-500">Selected location</div><div class="truncate text-xl font-bold">${escapeHtml(state.selectedLocation || 'Select one')}</div></div>
@@ -385,13 +399,14 @@ async function loadLocations() {
 
     try {
         const response = await api('/api/v1/locations');
-        state.locations = response.data.map((item) => item.code);
+        state.locations = response.data;
         state.locationsLoaded = true;
     } catch (error) {
         state.error = error.message;
     } finally {
         state.busy = false;
         render();
+        requestAnimationFrame(() => document.querySelector('#location-search')?.focus());
     }
 }
 
@@ -566,11 +581,22 @@ app.addEventListener('click', (event) => {
     const actionElement = event.target.closest('[data-action]');
     const action = actionElement?.dataset.action;
     const location = event.target.closest('[data-location]')?.dataset.location;
+    const sectionButton = event.target.closest('[data-section]');
+    const section = sectionButton ? sectionButton.dataset.section : undefined;
     const scanType = event.target.closest('[data-scan-type]')?.dataset.scanType;
     const candidateIndex = event.target.closest('[data-candidate-index]')?.dataset.candidateIndex;
     const recordType = event.target.closest('[data-record-type]')?.dataset.recordType;
     const entryId = event.target.closest('[data-entry-id]')?.dataset.entryId;
 
+    if (section !== undefined) {
+        state.locationSearch = section;
+        render();
+        requestAnimationFrame(() => {
+            const input = document.querySelector('#location-search');
+            input?.focus();
+            if (input) input.setSelectionRange(input.value.length, input.value.length);
+        });
+    }
     if (location) {
         document.querySelector('#location-search')?.blur();
         state.selectedLocation = location;

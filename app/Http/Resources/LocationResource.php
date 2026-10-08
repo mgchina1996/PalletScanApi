@@ -16,6 +16,16 @@ class LocationResource extends JsonResource
     {
         return [
             'code' => $this->resource,
+            'section' => $this->extractSection($this->resource),
         ];
+    }
+
+    private function extractSection(string $code): string
+    {
+        if (preg_match('/^[SN]\d+/', $code, $matches)) {
+            return $matches[0];
+        }
+
+        return substr($code, 0, 2);
     }
 }

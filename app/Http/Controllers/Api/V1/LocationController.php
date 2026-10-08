@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\LocationResource;
+use App\Models\Portal\Bin;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Cache;
 
@@ -23,6 +24,18 @@ class LocationController extends Controller
                     }
                 }
             }
+
+            $portalBins = Bin::where(function ($query) {
+                $query->where('BinNumber', 'LIKE', 'N1%')
+                    ->orWhere('BinNumber', 'LIKE', 'N2%')
+                    ->orWhere('BinNumber', 'LIKE', 'N3%');
+            })
+                ->where('IsDynamic', 0)
+                ->where('LocationID', 22)
+                ->pluck('BinNumber')
+                ->all();
+
+            $locations = array_merge($locations, $portalBins);
 
             return $locations;
         });
