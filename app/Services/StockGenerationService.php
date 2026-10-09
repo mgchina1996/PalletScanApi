@@ -69,14 +69,20 @@ class StockGenerationService
         }
 
         $logs = DB::connection('portal')->transaction(function () use ($entry, $carton, $itemIds): array {
+            $binNumber = $entry->location_code.'-'.$carton->CartonID;
             $bin = Bin::where('CartonID', $carton->CartonID)->first();
+
             if ($bin === null) {
                 $bin = Bin::create([
-                    'BinNumber' => $entry->location_code.'-'.$carton->CartonID,
+                    'BinNumber' => $binNumber,
                     'LocationID' => self::LOCATION_ID,
                     'IsDynamic' => 1,
                     'CartonID' => $carton->CartonID,
                     'CreatedOn' => now('UTC'),
+                ]);
+            } elseif ($bin->BinNumber !== $binNumber) {
+                $bin->update([
+                    'BinNumber' => $binNumber,
                 ]);
             }
 
