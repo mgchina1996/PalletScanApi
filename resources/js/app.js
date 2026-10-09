@@ -287,7 +287,7 @@ function renderResults() {
         const detail = isCarton ? `Carton ID: ${candidate.cartonID}` : `Candidate ${index + 1}`;
         const selected = selectedCode === code;
 
-        return `<button type="button" data-candidate-index="${index}" class="flex min-h-20 w-full items-center gap-3 rounded-xl border p-4 text-left ${selected ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-100' : 'border-slate-200 bg-white'}"><span class="grid h-6 w-6 place-items-center rounded-full border-2 ${selected ? 'border-blue-600' : 'border-slate-400'}">${selected ? '<span class="h-3 w-3 rounded-full bg-blue-600"></span>' : ''}</span><span class="min-w-0 flex-1"><strong class="block truncate text-lg">${escapeHtml(code)}</strong><span class="text-xs text-slate-500">${escapeHtml(detail)}</span></span></button>`;
+        return `<button type="button" data-candidate-index="${index}" class="flex min-h-20 min-w-0 w-full items-start gap-3 overflow-hidden rounded-xl border p-4 text-left ${selected ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-100' : 'border-slate-200 bg-white'}"><span class="mt-1 grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 ${selected ? 'border-blue-600' : 'border-slate-400'}">${selected ? '<span class="h-3 w-3 rounded-full bg-blue-600"></span>' : ''}</span><span class="min-w-0 flex-1"><strong class="block break-words text-lg leading-snug [overflow-wrap:anywhere]">${escapeHtml(code)}</strong><span class="mt-1 block text-xs text-slate-500">${escapeHtml(detail)}</span></span></button>`;
     }).join('');
 
     const manualEntry = state.isManualEntry ? `
@@ -305,7 +305,7 @@ function renderResults() {
             </div>
             ${alertMessage()}
             ${state.recognizedText ? `<div class="mt-4 rounded-2xl bg-white p-4 shadow-sm sm:p-6"><div class="text-sm font-bold">All recognized text</div><pre class="mt-3 max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-xl bg-slate-100 p-4 font-sans text-sm text-slate-700">${escapeHtml(state.recognizedText)}</pre></div>` : ''}
-            <div class="mt-4 grid gap-3 sm:grid-cols-2">${candidates || '<div class="col-span-full rounded-xl bg-white p-8 text-center text-slate-500">No matching result was found.</div>'}</div>
+            <div class="mt-4 grid min-w-0 gap-3 sm:grid-cols-2">${candidates || '<div class="col-span-full rounded-xl bg-white p-8 text-center text-slate-500">No matching result was found.</div>'}</div>
             ${manualEntry}
         </div>
         <div class="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 py-3 shadow-[0_-8px_24px_rgba(15,23,42,.08)] backdrop-blur sm:px-6">
