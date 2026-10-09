@@ -322,7 +322,7 @@ function renderCount() {
     const scanLabel = scanTypeLabel();
     const code = isCarton ? state.selectedCandidate.cartonNumber : state.selectedCandidate;
     const codeField = isSku
-        ? `<label class="mt-4 block rounded-xl border border-slate-200 p-4"><span class="text-xs text-slate-500">SKU</span><input id="single-code" type="text" value="${escapeHtml(code)}" autocapitalize="characters" autocomplete="off" spellcheck="false" class="mt-1 h-12 w-full rounded-lg border border-slate-300 px-3 text-xl font-bold uppercase outline-none focus:border-blue-500 focus:ring-3 focus:ring-blue-100"></label>`
+        ? `<label class="mt-4 block rounded-xl border border-slate-200 p-4"><span class="text-xs text-slate-500">SKU</span><input id="single-code" type="text" value="${escapeHtml(code)}" autocapitalize="none" autocomplete="off" spellcheck="false" class="mt-1 h-12 w-full rounded-lg border border-slate-300 px-3 text-xl font-bold outline-none focus:border-blue-500 focus:ring-3 focus:ring-blue-100"></label>`
         : `<div class="mt-4 rounded-xl border border-slate-200 p-4"><div class="text-xs text-slate-500">${isCarton ? 'Carton Number' : scanLabel}</div><div class="mt-1 text-xl font-bold">${escapeHtml(code)}</div></div>`;
     const previousEntry = isCarton && state.pendingCartonEntry
         ? `<section class="mt-5 overflow-hidden rounded-2xl border border-amber-300 bg-white shadow-sm"><div class="bg-amber-50 px-5 py-4 text-amber-800" role="status"><h2 class="text-xl font-bold">Already recorded here</h2><p class="mt-1 text-base">This carton was saved at <strong>${escapeHtml(state.selectedLocation)}</strong>.</p></div><div class="p-5"><div class="text-sm text-slate-500">Previously saved quantities</div><div class="mt-2">${state.pendingCartonEntry.products.map((product) => `<div class="flex items-center justify-between gap-4 border-b border-slate-200 py-3"><strong class="truncate text-lg">${escapeHtml(product.tpin)}</strong><span class="shrink-0">Qty: <strong>${product.quantity}</strong></span></div>`).join('')}</div><label class="mt-4 flex cursor-pointer items-start gap-3"><input id="overwrite-existing-carton" type="checkbox" ${state.overwriteExistingCarton ? 'checked' : ''} class="mt-0.5 h-6 w-6 shrink-0 accent-blue-600"><span><strong class="block text-lg text-blue-700">Replace the previous record</strong><span class="mt-1 block text-sm text-slate-500">Checked: update the saved quantities.<br>Unchecked: keep it and add a new record.</span></span></label></div></section>`
@@ -571,7 +571,9 @@ async function saveEntry() {
             overwriteExisting: state.pendingCartonEntry ? state.overwriteExistingCarton : false,
         };
     } else {
-        const productCode = String(state.selectedCandidate ?? '').trim().toUpperCase();
+        const productCode = state.scanType === 'sku'
+            ? String(state.selectedCandidate ?? '').trim()
+            : String(state.selectedCandidate ?? '').trim().toUpperCase();
         if (productCode === '') {
             state.error = `Enter a ${scanTypeLabel()}.`;
             render();
@@ -766,7 +768,7 @@ app.addEventListener('input', (event) => {
         state.manualCode = event.target.value.toUpperCase();
         state.selectedCandidate = null;
     }
-    if (event.target.id === 'single-code') state.selectedCandidate = event.target.value.toUpperCase();
+    if (event.target.id === 'single-code') state.selectedCandidate = event.target.value;
     if (event.target.id === 'single-quantity') state.quantity = event.target.value;
     if (event.target.id === 'overwrite-existing-carton') state.overwriteExistingCarton = event.target.checked;
     if (event.target.dataset.productTpin) state.quantities[event.target.dataset.productTpin] = event.target.value;
