@@ -30,4 +30,9 @@ class Entry extends Model
     {
         return $this->hasMany(EntryProduct::class);
     }
+
+    public function stockGenerationLogs(): HasMany
+    {
+        return $this->hasMany(StockGenerationLog::class);
+    }
 }

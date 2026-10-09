@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ReportController;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Route;
@@ -15,3 +16,5 @@ Route::get('/', function (): View {
         PreventRequestForgery::class,
     ])
     ->name('pallet-scan');
+
+Route::get('/report', ReportController::class)->name('report');
