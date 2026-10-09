@@ -304,7 +304,7 @@ function renderCount() {
     const productFields = state.products.map((product) => `
         <label class="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4">
             <span class="min-w-0 flex-1"><span class="block text-xs text-slate-500">TPIN</span><strong class="block truncate text-lg">${escapeHtml(product.tpin)}</strong></span>
-            <span class="w-28"><span class="block text-xs text-slate-500">Actual quantity</span><input data-product-tpin="${escapeHtml(product.tpin)}" type="number" min="1" step="1" inputmode="numeric" value="${escapeHtml(state.quantities[product.tpin] ?? '')}" class="mt-1 h-11 w-full rounded-lg border border-slate-300 px-3 text-lg font-bold outline-none focus:border-blue-500 focus:ring-3 focus:ring-blue-100"></span>
+            <span class="w-28"><span class="block text-xs text-slate-500">Actual quantity</span><input data-product-tpin="${escapeHtml(product.tpin)}" type="number" min="0" step="1" inputmode="numeric" value="${escapeHtml(state.quantities[product.tpin] ?? '')}" class="mt-1 h-11 w-full rounded-lg border border-slate-300 px-3 text-lg font-bold outline-none focus:border-blue-500 focus:ring-3 focus:ring-blue-100"></span>
         </label>`).join('');
 
     return shell(`
@@ -315,7 +315,7 @@ function renderCount() {
                 <div class="mt-4 rounded-xl border border-slate-200 p-4"><div class="text-xs text-slate-500">${isCarton ? 'Carton Number' : 'TPIN'}</div><div class="mt-1 text-xl font-bold">${escapeHtml(code)}</div></div>
             </div>
             <section class="mt-5">
-                <div class="mb-3"><h2 class="text-lg font-bold">${isCarton ? 'Products in this carton' : 'Actual quantity'}</h2><p class="text-sm text-slate-500">${isCarton ? 'Enter at least one quantity. Leave products blank if they are not being submitted.' : 'Enter the quantity physically counted at this location.'}</p></div>
+                <div class="mb-3"><h2 class="text-lg font-bold">${isCarton ? 'Products in this carton' : 'Actual quantity'}</h2><p class="text-sm text-slate-500">${isCarton ? 'Enter at least one quantity greater than 0. Enter 0 or leave blank to skip a product.' : 'Enter the quantity physically counted at this location.'}</p></div>
                 ${isCarton ? `<div class="grid gap-3 sm:grid-cols-2">${productFields}</div>` : `<div class="rounded-2xl bg-white p-5 shadow-sm"><label class="text-sm font-semibold" for="single-quantity">Actual quantity</label><input id="single-quantity" type="number" min="1" step="1" inputmode="numeric" value="${escapeHtml(state.quantity)}" class="mt-2 h-14 w-full rounded-xl border border-slate-300 px-4 text-xl font-bold outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"></div>`}
             </section>
         </div>
@@ -477,6 +477,11 @@ function positiveInteger(value) {
     return Number.isInteger(number) && number > 0 ? number : null;
 }
 
+function nonNegativeInteger(value) {
+    const number = Number(value);
+    return Number.isInteger(number) && number >= 0 ? number : null;
+}
+
 async function saveEntry() {
     state.error = '';
     let body;
@@ -490,13 +495,22 @@ async function saveEntry() {
             return;
         }
 
-        const products = enteredProducts.map((product) => ({ tpin: product.tpin, quantity: positiveInteger(state.quantities[product.tpin]) }));
+        const enteredQuantities = enteredProducts.map((product) => ({ tpin: product.tpin, quantity: nonNegativeInteger(state.quantities[product.tpin]) }));
 
-        if (products.some((product) => product.quantity === null)) {
-            state.error = 'Each entered quantity must be a whole number greater than 0.';
+        if (enteredQuantities.some((product) => product.quantity === null)) {
+            state.error = 'Each entered quantity must be a whole number of 0 or greater.';
             render();
             return;
         }
+
+        const products = enteredQuantities.filter((product) => product.quantity > 0);
+
+        if (products.length === 0) {
+            state.error = 'Enter a quantity greater than 0 for at least one product.';
+            render();
+            return;
+        }
+
         body = { locationCode: state.selectedLocation, cartonNumber: state.selectedCandidate.cartonNumber, products };
     } else {
         const quantity = positiveInteger(state.quantity);
