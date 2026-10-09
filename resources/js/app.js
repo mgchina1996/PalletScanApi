@@ -293,7 +293,7 @@ function renderResults() {
     const manualEntry = state.isManualEntry ? `
         <div class="mt-4 rounded-2xl bg-white p-4 shadow-sm sm:p-6">
             <label for="manual-code" class="text-sm font-semibold">${isCarton ? 'Carton Number' : scanLabel}</label>
-            <input id="manual-code" value="${escapeHtml(state.manualCode)}" autocapitalize="characters" enterkeyhint="done" class="mt-2 h-13 w-full rounded-xl border-2 border-blue-500 px-4 uppercase outline-none ring-4 ring-blue-100" placeholder="ENTER MANUALLY">
+            <input id="manual-code" value="${escapeHtml(state.manualCode)}" autocapitalize="${state.scanType === 'sku' ? 'none' : 'characters'}" enterkeyhint="done" class="mt-2 h-13 w-full rounded-xl border-2 border-blue-500 px-4 ${state.scanType === 'sku' ? '' : 'uppercase'} outline-none ring-4 ring-blue-100" placeholder="ENTER MANUALLY">
         </div>` : '';
 
     return shell(`
@@ -469,7 +469,9 @@ async function recognize(file) {
 }
 
 async function confirmResult() {
-    const manual = state.manualCode.trim().toUpperCase();
+    const manual = state.scanType === 'sku'
+        ? state.manualCode.trim()
+        : state.manualCode.trim().toUpperCase();
     if (manual) {
         state.selectedCandidate = state.scanType === 'carton'
             ? { cartonNumber: manual, cartonID: /^[0-9]{5,6}$/.test(manual) ? Number(manual) : null }
@@ -765,7 +767,7 @@ app.addEventListener('input', (event) => {
         searchInput?.setSelectionRange(selectionStart, selectionEnd);
     }
     if (event.target.id === 'manual-code') {
-        state.manualCode = event.target.value.toUpperCase();
+        state.manualCode = state.scanType === 'sku' ? event.target.value : event.target.value.toUpperCase();
         state.selectedCandidate = null;
     }
     if (event.target.id === 'single-code') state.selectedCandidate = event.target.value;

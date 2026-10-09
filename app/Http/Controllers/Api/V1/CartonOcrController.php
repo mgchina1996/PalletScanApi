@@ -62,7 +62,7 @@ class CartonOcrController extends Controller
         if ($type === Entry::TYPE_SKU) {
             $skus = array_values(array_unique(array_filter(array_map(
                 trim(...),
-                preg_split('/\R/u', $normalizedText) ?: [],
+                preg_split('/\R/u', $text) ?: [],
             ))));
 
             return response()->json([
