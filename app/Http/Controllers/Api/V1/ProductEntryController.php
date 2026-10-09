@@ -42,7 +42,7 @@ class ProductEntryController extends Controller
                     $entry->update(['image_path' => $imagePath]);
                 }
 
-                if ($type === Entry::TYPE_TPIN) {
+                if (in_array($type, [Entry::TYPE_TPIN, Entry::TYPE_SKU], true)) {
                     $carton = $cartonCreator->create();
                     $entry->carton_id = (int) $carton->CartonID;
                     $entry->save();

@@ -11,6 +11,7 @@ const state = {
     photoUrl: '',
     imageToken: '',
     candidates: [],
+    recognizedText: '',
     selectedCandidate: null,
     manualCode: '',
     isManualEntry: false,
@@ -48,6 +49,12 @@ function escapeHtml(value) {
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#039;');
+}
+
+function scanTypeLabel(type = state.scanType) {
+    if (type === 'carton') return 'Carton';
+    if (type === 'sku') return 'SKU';
+    return 'TPIN';
 }
 
 function button(label, action, options = {}) {
@@ -185,6 +192,7 @@ function resetScan() {
     state.photoUrl = '';
     state.imageToken = '';
     state.candidates = [];
+    state.recognizedText = '';
     state.selectedCandidate = null;
     state.manualCode = '';
     state.isManualEntry = false;
@@ -241,15 +249,17 @@ function renderLocations() {
 }
 
 function renderScanner() {
+    const scanLabel = scanTypeLabel();
     const preview = state.photoUrl
         ? `<img src="${state.photoUrl}" alt="Selected label" class="h-full w-full object-cover">`
-        : `<div class="grid h-full place-items-center bg-[linear-gradient(135deg,#14294c,#07152d)] text-center text-white"><div><div class="mx-auto grid h-20 w-20 place-items-center rounded-full border border-white/30 bg-white/10">${icons.camera}</div><p class="mt-4 text-lg font-bold">Photograph ${state.scanType === 'carton' ? 'Carton' : 'TPIN'}</p><p class="mt-1 text-sm text-blue-100">Keep the full code clear and inside the frame</p></div></div>`;
+        : `<div class="grid h-full place-items-center bg-[linear-gradient(135deg,#14294c,#07152d)] text-center text-white"><div><div class="mx-auto grid h-20 w-20 place-items-center rounded-full border border-white/30 bg-white/10">${icons.camera}</div><p class="mt-4 text-lg font-bold">Photograph ${scanLabel}</p><p class="mt-1 text-sm text-blue-100">Keep the full code clear and inside the frame</p></div></div>`;
     const controls = `
         <div class="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
             ${currentLocation()}
-            <div class="mt-4 grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1.5">
+            <div class="mt-4 grid grid-cols-3 gap-2 rounded-xl bg-slate-100 p-1.5">
                 <button type="button" data-scan-type="carton" class="flex min-h-12 items-center justify-center gap-2 rounded-lg font-bold ${state.scanType === 'carton' ? 'bg-blue-600 text-white shadow' : 'text-slate-600'}">${icons.carton} Carton</button>
                 <button type="button" data-scan-type="tpin" class="flex min-h-12 items-center justify-center gap-2 rounded-lg font-bold ${state.scanType === 'tpin' ? 'bg-blue-600 text-white shadow' : 'text-slate-600'}">${icons.barcode} TPIN</button>
+                <button type="button" data-scan-type="sku" class="flex min-h-12 items-center justify-center gap-2 rounded-lg font-bold ${state.scanType === 'sku' ? 'bg-blue-600 text-white shadow' : 'text-slate-600'}">${icons.barcode} SKU</button>
             </div>
             ${alertMessage()}
             <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
@@ -270,6 +280,7 @@ function renderScanner() {
 
 function renderResults() {
     const isCarton = state.scanType === 'carton';
+    const scanLabel = scanTypeLabel();
     const selectedCode = isCarton ? state.selectedCandidate?.cartonNumber : state.selectedCandidate;
     const candidates = state.candidates.map((candidate, index) => {
         const code = isCarton ? candidate.cartonNumber : candidate;
@@ -281,7 +292,7 @@ function renderResults() {
 
     const manualEntry = state.isManualEntry ? `
         <div class="mt-4 rounded-2xl bg-white p-4 shadow-sm sm:p-6">
-            <label for="manual-code" class="text-sm font-semibold">${isCarton ? 'Carton Number' : 'TPIN'}</label>
+            <label for="manual-code" class="text-sm font-semibold">${isCarton ? 'Carton Number' : scanLabel}</label>
             <input id="manual-code" value="${escapeHtml(state.manualCode)}" autocapitalize="characters" enterkeyhint="done" class="mt-2 h-13 w-full rounded-xl border-2 border-blue-500 px-4 uppercase outline-none ring-4 ring-blue-100" placeholder="ENTER MANUALLY">
         </div>` : '';
 
@@ -289,23 +300,25 @@ function renderResults() {
         <div class="mx-auto max-w-3xl pb-28">
             <div class="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
                 ${currentLocation()}
-                <div class="mt-4 flex items-center gap-2 text-sm text-slate-500">${isCarton ? icons.carton : icons.barcode}<strong class="text-slate-900">${isCarton ? 'Carton' : 'TPIN'} recognition results</strong></div>
+                <div class="mt-4 flex items-center gap-2 text-sm text-slate-500">${isCarton ? icons.carton : icons.barcode}<strong class="text-slate-900">${scanLabel} recognition results</strong></div>
                 <p class="mt-2 text-sm text-slate-500">Select the correct result or enter it manually.</p>
             </div>
             ${alertMessage()}
+            ${state.recognizedText ? `<div class="mt-4 rounded-2xl bg-white p-4 shadow-sm sm:p-6"><div class="text-sm font-bold">All recognized text</div><pre class="mt-3 max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-xl bg-slate-100 p-4 font-sans text-sm text-slate-700">${escapeHtml(state.recognizedText)}</pre></div>` : ''}
             <div class="mt-4 grid gap-3 sm:grid-cols-2">${candidates || '<div class="col-span-full rounded-xl bg-white p-8 text-center text-slate-500">No matching result was found.</div>'}</div>
             ${manualEntry}
         </div>
         <div class="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 py-3 shadow-[0_-8px_24px_rgba(15,23,42,.08)] backdrop-blur sm:px-6">
             <div class="mx-auto grid max-w-3xl grid-cols-2 gap-2">
                 ${button(state.isManualEntry ? 'Choose Candidate' : 'Enter Manually', state.isManualEntry ? 'choose-candidate' : 'enter-manual', { secondary: true })}
-                ${button(`Confirm ${isCarton ? 'Carton' : 'TPIN'}`, 'confirm-result')}
+                ${button(`Confirm ${scanLabel}`, 'confirm-result')}
             </div>
         </div>`, { title: 'Recognition Results', back: true, subtitle: state.selectedLocation });
 }
 
 function renderCount() {
     const isCarton = state.scanType === 'carton';
+    const scanLabel = scanTypeLabel();
     const code = isCarton ? state.selectedCandidate.cartonNumber : state.selectedCandidate;
     const previousEntry = isCarton && state.pendingCartonEntry
         ? `<section class="mt-5 overflow-hidden rounded-2xl border border-amber-300 bg-white shadow-sm"><div class="bg-amber-50 px-5 py-4 text-amber-800" role="status"><h2 class="text-xl font-bold">Already recorded here</h2><p class="mt-1 text-base">This carton was saved at <strong>${escapeHtml(state.selectedLocation)}</strong>.</p></div><div class="p-5"><div class="text-sm text-slate-500">Previously saved quantities</div><div class="mt-2">${state.pendingCartonEntry.products.map((product) => `<div class="flex items-center justify-between gap-4 border-b border-slate-200 py-3"><strong class="truncate text-lg">${escapeHtml(product.tpin)}</strong><span class="shrink-0">Qty: <strong>${product.quantity}</strong></span></div>`).join('')}</div><label class="mt-4 flex cursor-pointer items-start gap-3"><input id="overwrite-existing-carton" type="checkbox" ${state.overwriteExistingCarton ? 'checked' : ''} class="mt-0.5 h-6 w-6 shrink-0 accent-blue-600"><span><strong class="block text-lg text-blue-700">Replace the previous record</strong><span class="mt-1 block text-sm text-slate-500">Checked: update the saved quantities.<br>Unchecked: keep it and add a new record.</span></span></label></div></section>`
@@ -321,7 +334,7 @@ function renderCount() {
             ${alertMessage()}
             <div class="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
                 ${currentLocation()}
-                <div class="mt-4 rounded-xl border border-slate-200 p-4"><div class="text-xs text-slate-500">${isCarton ? 'Carton Number' : 'TPIN'}</div><div class="mt-1 text-xl font-bold">${escapeHtml(code)}</div></div>
+                <div class="mt-4 rounded-xl border border-slate-200 p-4"><div class="text-xs text-slate-500">${isCarton ? 'Carton Number' : scanLabel}</div><div class="mt-1 text-xl font-bold">${escapeHtml(code)}</div></div>
             </div>
             ${previousEntry}
             <section class="mt-5">
@@ -331,41 +344,42 @@ function renderCount() {
         </div>
         <div class="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 py-3 shadow-[0_-8px_24px_rgba(15,23,42,.08)] backdrop-blur sm:px-6">
             <div class="mx-auto grid max-w-3xl grid-cols-2 gap-2">${button('Back', 'back', { secondary: true })}${button(state.busy ? 'Saving…' : isCarton ? 'Save Carton' : 'Save', 'save-entry', { disabled: state.busy })}</div>
-        </div>`, { title: isCarton ? 'Carton Product Quantities' : 'TPIN Entry', back: true, subtitle: state.selectedLocation });
+        </div>`, { title: isCarton ? 'Carton Product Quantities' : `${scanLabel} Entry`, back: true, subtitle: state.selectedLocation });
 }
 
 function renderSuccess() {
     const entry = state.savedEntry;
     const isCarton = entry.type === 'carton';
+    const entryLabel = scanTypeLabel(entry.type);
     const products = isCarton ? `<div class="mt-4 border-t border-slate-100 pt-4"><div class="text-xs text-slate-500">Products</div>${entry.products.map((product) => `<div class="mt-2 flex justify-between gap-4 text-sm"><strong>${escapeHtml(product.tpin)}</strong><span>Quantity <strong>${product.quantity}</strong></span></div>`).join('')}</div>` : `<div class="mt-4 flex justify-between border-t border-slate-100 pt-4"><span class="text-sm text-slate-500">Actual quantity</span><strong>${entry.quantity}</strong></div>`;
     const details = isCarton
         ? `<div class="mt-7 rounded-2xl bg-white p-5 text-left shadow-sm">${currentLocation()}<div class="mt-4"><div class="text-xs text-slate-500">Carton Number</div><strong class="mt-1 block text-xl">${escapeHtml(entry.code)}</strong></div>${products}</div>`
-        : `<div class="mt-7 rounded-2xl bg-white p-5 text-left shadow-sm"><div class="flex items-center gap-2 rounded-xl bg-slate-100 px-4 py-3"><span class="text-blue-600">${icons.location}</span><span class="text-slate-500">Location:</span><strong class="text-blue-700">${escapeHtml(state.selectedLocation)}</strong></div><div class="mt-5"><div class="text-sm text-slate-500">Carton Number</div><strong class="mt-1 block break-all text-2xl text-blue-700">${escapeHtml(entry.cartonNumber)}</strong><div class="mt-2 text-lg"><span class="text-slate-500">Carton ID:</span> <strong>${escapeHtml(entry.cartonId)}</strong></div></div><div class="mt-5 flex items-stretch justify-between gap-4 border-t border-slate-200 pt-5"><div class="min-w-0 flex-1"><div class="text-sm text-slate-500">TPIN</div><strong class="mt-1 flex h-14 items-center truncate text-xl">${escapeHtml(entry.code)}</strong></div><div class="shrink-0 text-right"><div class="text-sm text-slate-500">Qty</div><strong class="mt-1 grid h-14 min-w-16 place-items-center rounded-xl bg-blue-50 px-4 text-3xl text-blue-700">${entry.quantity}</strong></div></div></div>`;
+        : `<div class="mt-7 rounded-2xl bg-white p-5 text-left shadow-sm"><div class="flex items-center gap-2 rounded-xl bg-slate-100 px-4 py-3"><span class="text-blue-600">${icons.location}</span><span class="text-slate-500">Location:</span><strong class="text-blue-700">${escapeHtml(state.selectedLocation)}</strong></div><div class="mt-5"><div class="text-sm text-slate-500">Carton Number</div><strong class="mt-1 block break-all text-2xl text-blue-700">${escapeHtml(entry.cartonNumber)}</strong><div class="mt-2 text-lg"><span class="text-slate-500">Carton ID:</span> <strong>${escapeHtml(entry.cartonId)}</strong></div></div><div class="mt-5 flex items-stretch justify-between gap-4 border-t border-slate-200 pt-5"><div class="min-w-0 flex-1"><div class="text-sm text-slate-500">${entryLabel}</div><strong class="mt-1 flex h-14 items-center truncate text-xl">${escapeHtml(entry.code)}</strong></div><div class="shrink-0 text-right"><div class="text-sm text-slate-500">Qty</div><strong class="mt-1 grid h-14 min-w-16 place-items-center rounded-xl bg-blue-50 px-4 text-3xl text-blue-700">${entry.quantity}</strong></div></div></div>`;
 
     return shell(`
         <div class="mx-auto max-w-xl py-6 text-center sm:py-12">
             <div class="mx-auto grid h-28 w-28 place-items-center rounded-full bg-emerald-100 text-emerald-600 ring-12 ring-emerald-50">${icons.check}</div>
             <h1 class="mt-7 text-3xl font-bold">Saved Successfully</h1>
-            <p class="mt-2 text-slate-500">${isCarton ? 'Carton' : 'TPIN'} Saved</p>
+            <p class="mt-2 text-slate-500">${entryLabel} Saved</p>
             ${details}
             <div class="mt-5 grid gap-3"><button type="button" data-action="continue-scanning" class="min-h-14 rounded-xl bg-blue-600 px-5 py-3 text-lg font-bold text-white shadow-sm transition hover:bg-blue-700">Continue Scanning</button><button type="button" data-action="complete-location" class="min-h-14 rounded-xl border-2 border-blue-600 bg-white px-5 py-3 text-lg font-bold text-blue-700 transition hover:bg-blue-50">Complete Location</button></div>
         </div>`, { title: 'Saved' });
 }
 
 function renderRecords() {
-    const filters = ['all', 'carton', 'tpin'].map((type) => `<button type="button" data-record-type="${type}" class="min-h-10 rounded-full px-4 text-sm font-semibold ${state.recordType === type ? 'bg-blue-600 text-white shadow' : 'text-slate-600'}">${type === 'all' ? 'All' : type === 'tpin' ? 'TPIN' : 'Carton'}</button>`).join('');
+    const filters = ['all', 'carton', 'tpin', 'sku'].map((type) => `<button type="button" data-record-type="${type}" class="min-h-10 rounded-full px-3 text-sm font-semibold ${state.recordType === type ? 'bg-blue-600 text-white shadow' : 'text-slate-600'}">${type === 'all' ? 'All' : scanTypeLabel(type)}</button>`).join('');
     const records = state.records.map((entry) => `
         <button type="button" data-entry-id="${entry.id}" class="flex min-h-24 w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-blue-300">
-            <span class="grid h-12 w-12 shrink-0 place-items-center rounded-xl ${entry.type === 'carton' ? 'bg-blue-100 text-blue-700' : 'bg-violet-100 text-violet-700'} text-xl font-bold">${entry.type === 'carton' ? 'C' : 'T'}</span>
-            <span class="min-w-0 flex-1"><span class="text-xs text-slate-500">${entry.type === 'carton' ? 'Carton' : 'TPIN'}</span><strong class="block truncate text-lg">${escapeHtml(entry.code)}</strong><span class="text-xs text-slate-500">${entry.type === 'carton' ? `${entry.productCount ?? 0} products` : `Quantity ${entry.quantity ?? 0}`} · ${escapeHtml(entry.time)}</span></span>
+            <span class="grid h-12 w-12 shrink-0 place-items-center rounded-xl ${entry.type === 'carton' ? 'bg-blue-100 text-blue-700' : 'bg-violet-100 text-violet-700'} text-xl font-bold">${entry.type === 'carton' ? 'C' : entry.type === 'sku' ? 'S' : 'T'}</span>
+            <span class="min-w-0 flex-1"><span class="text-xs text-slate-500">${scanTypeLabel(entry.type)}</span><strong class="block truncate text-lg">${escapeHtml(entry.code)}</strong><span class="text-xs text-slate-500">${entry.type === 'carton' ? `${entry.productCount ?? 0} products` : `Quantity ${entry.quantity ?? 0}`} · ${escapeHtml(entry.time)}</span></span>
             <span class="text-right"><span class="block rounded-lg bg-blue-50 px-2 py-1 text-xs font-bold text-blue-700">${escapeHtml(entry.locationCode)}</span><span class="mt-1 block text-xl text-slate-400">›</span></span>
         </button>`).join('');
 
     return shell(`
         <section class="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
-            <h1 class="text-2xl font-bold">Records</h1><p class="mt-1 text-sm text-slate-500">Review saved Carton and TPIN entries.</p>
-            <div class="relative mt-4"><span class="pointer-events-none absolute inset-y-0 left-4 grid place-items-center text-slate-400">${icons.search}</span><input id="record-search" value="${escapeHtml(state.recordSearch)}" class="h-13 w-full rounded-xl border border-slate-300 pr-4 pl-12 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100" placeholder="Search Carton or TPIN"></div>
-            <div class="mt-3 grid grid-cols-3 gap-2 rounded-full bg-slate-100 p-1">${filters}</div>
+            <h1 class="text-2xl font-bold">Records</h1><p class="mt-1 text-sm text-slate-500">Review saved Carton, TPIN, and SKU entries.</p>
+            <div class="relative mt-4"><span class="pointer-events-none absolute inset-y-0 left-4 grid place-items-center text-slate-400">${icons.search}</span><input id="record-search" value="${escapeHtml(state.recordSearch)}" class="h-13 w-full rounded-xl border border-slate-300 pr-4 pl-12 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100" placeholder="Search Carton, TPIN, or SKU"></div>
+            <div class="mt-3 grid grid-cols-4 gap-1 rounded-full bg-slate-100 p-1">${filters}</div>
         </section>
         ${alertMessage()}
         <section class="mt-4">${state.busy ? loading('Loading records') : state.records.length ? `<div class="grid gap-3 md:grid-cols-2">${records}</div>` : '<div class="rounded-2xl bg-white p-12 text-center shadow-sm"><strong>No entries found</strong><p class="mt-2 text-sm text-slate-500">Try another search or record type.</p></div>'}</section>`, { title: 'PalletScan', nav: 'records' });
@@ -383,7 +397,7 @@ function renderEntryDetail() {
     return shell(`
         <div class="mx-auto max-w-3xl">
             <section class="rounded-2xl bg-white p-5 shadow-sm">
-                <div class="flex items-center gap-4"><span class="grid h-14 w-14 place-items-center rounded-xl ${entry.type === 'carton' ? 'bg-blue-100 text-blue-700' : 'bg-violet-100 text-violet-700'} text-2xl font-bold">${entry.type === 'carton' ? 'C' : 'T'}</span><div><div class="text-sm text-slate-500">${entry.type === 'carton' ? 'Carton' : 'TPIN'}</div><strong class="text-2xl">${escapeHtml(entry.code)}</strong></div></div>
+                <div class="flex items-center gap-4"><span class="grid h-14 w-14 place-items-center rounded-xl ${entry.type === 'carton' ? 'bg-blue-100 text-blue-700' : 'bg-violet-100 text-violet-700'} text-2xl font-bold">${entry.type === 'carton' ? 'C' : entry.type === 'sku' ? 'S' : 'T'}</span><div><div class="text-sm text-slate-500">${scanTypeLabel(entry.type)}</div><strong class="text-2xl">${escapeHtml(entry.code)}</strong></div></div>
                 <dl class="mt-5 grid gap-3 border-t border-slate-100 pt-4 text-sm sm:grid-cols-2"><div class="flex justify-between gap-4"><dt class="text-slate-500">Location</dt><dd class="font-bold text-blue-700">${escapeHtml(entry.locationCode)}</dd></div><div class="flex justify-between gap-4"><dt class="text-slate-500">Recorded</dt><dd class="font-semibold">${escapeHtml(formatDate(entry.createdAt))}</dd></div></dl>
             </section>
             ${products}
@@ -434,7 +448,12 @@ async function recognize(file) {
         data.append('image', uploadFile);
         const response = await api('/api/v1/ocr/carton', { method: 'POST', body: data });
         state.imageToken = response.data.imageToken;
-        state.candidates = state.scanType === 'carton' ? response.data.cartons : response.data.tpins;
+        state.recognizedText = response.data.recognizedText ?? '';
+        state.candidates = state.scanType === 'carton'
+            ? response.data.cartons
+            : state.scanType === 'sku'
+                ? response.data.skus
+                : response.data.tpins;
         state.selectedCandidate = state.candidates.length === 1 ? state.candidates[0] : null;
         setScreen('results');
     } catch (error) {
@@ -455,7 +474,7 @@ async function confirmResult() {
     if (!state.selectedCandidate) return;
     state.error = '';
 
-    if (state.scanType === 'tpin') {
+    if (state.scanType !== 'carton') {
         setScreen('count');
         return;
     }
@@ -566,12 +585,12 @@ async function saveEntry() {
     render();
 
     try {
-        const url = state.scanType === 'carton' ? '/api/v1/entries/cartons' : '/api/v1/entries/products/tpin';
+        const url = state.scanType === 'carton' ? '/api/v1/entries/cartons' : `/api/v1/entries/products/${state.scanType}`;
         const response = await api(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         state.savedEntry = state.scanType === 'carton'
             ? { type: 'carton', code: body.cartonNumber, products: body.products }
             : {
-                type: 'tpin',
+                type: state.scanType,
                 code: body.tpin,
                 quantity: body.quantity,
                 cartonId: response.data.carton_id,

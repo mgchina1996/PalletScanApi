@@ -30,8 +30,8 @@ class StockGenerationService
         try {
             if ($entry->type === Entry::TYPE_CARTON) {
                 $this->processCartonType($entry, $operationId);
-            } elseif ($entry->type === Entry::TYPE_TPIN) {
-                $this->processTpinType($entry, $operationId);
+            } elseif (in_array($entry->type, [Entry::TYPE_TPIN, Entry::TYPE_SKU], true)) {
+                $this->processProductType($entry, $operationId);
             } else {
                 throw new \RuntimeException("Unsupported entry type: {$entry->type}");
             }
@@ -155,14 +155,18 @@ class StockGenerationService
     }
 
     /**
-     * Tpin type: reuse its carton, then create a bin, line confirm and inventory detail.
+     * TPIN and SKU types: reuse their carton, then generate inventory.
      */
-    private function processTpinType(Entry $entry, string $operationId): void
+    private function processProductType(Entry $entry, string $operationId): void
     {
-        $itemId = Item::where('TPIN', $entry->code)->value('ItemID');
-        if ($itemId === null) {
-            throw new \RuntimeException("Item not found in portal for TPIN: {$entry->code}");
+        $lookupColumn = $entry->type === Entry::TYPE_SKU ? 'SKU' : 'TPIN';
+        $item = Item::query()->where($lookupColumn, $entry->code)->first(['ItemID', 'TPIN']);
+
+        if ($item === null) {
+            throw new \RuntimeException("Item not found in portal for {$lookupColumn}: {$entry->code}");
         }
+
+        $itemId = (int) $item->ItemID;
 
         $locationBinId = Bin::where('BinNumber', $entry->location_code)
             ->where('LocationID', self::LOCATION_ID)
@@ -214,7 +218,7 @@ class StockGenerationService
             return [$bin, $inventoryDetail];
         });
 
-        DB::transaction(function () use ($entry, $carton, $bin, $itemId, $operationId, $inventoryDetail): void {
+        DB::transaction(function () use ($entry, $carton, $bin, $item, $itemId, $operationId, $inventoryDetail): void {
             StockGenerationLog::create([
                 'operation_id' => $operationId,
                 'entry_id' => $entry->id,
@@ -225,7 +229,7 @@ class StockGenerationService
                 'bin_id' => (int) $bin->BinID,
                 'item_id' => (int) $itemId,
                 'inventory_detail_id' => $inventoryDetail->Id,
-                'tpin' => $entry->code,
+                'tpin' => (string) $item->TPIN,
                 'location_code' => $entry->location_code,
                 'quantity' => (int) $entry->quantity,
                 'qty_on_hand_before' => null,

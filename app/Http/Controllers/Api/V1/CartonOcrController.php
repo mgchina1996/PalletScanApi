@@ -42,6 +42,7 @@ class CartonOcrController extends Controller
         }
 
         $normalizedText = strtoupper($text);
+        $type = $request->string('type')->toString();
 
         try {
             $imageToken = $imageStorage->uploadTemporary(
@@ -58,7 +59,23 @@ class CartonOcrController extends Controller
             return response()->json(['message' => 'Unable to upload the image.'], 502);
         }
 
-        if ($request->string('type')->toString() === Entry::TYPE_TPIN) {
+        if ($type === Entry::TYPE_SKU) {
+            $skus = array_values(array_unique(array_filter(array_map(
+                trim(...),
+                preg_split('/\R/u', $normalizedText) ?: [],
+            ))));
+
+            return response()->json([
+                'data' => [
+                    'skus' => $skus,
+                    'recognizedText' => trim($text),
+                    'total' => count($skus),
+                    'imageToken' => $imageToken,
+                ],
+            ]);
+        }
+
+        if ($type === Entry::TYPE_TPIN) {
             preg_match_all('/(?<![A-Z0-9])[A-Z0-9]{9}(?![A-Z0-9])/', $normalizedText, $tpinMatches);
             $tpins = array_values(array_unique(array_filter(
                 $tpinMatches[0],
@@ -68,6 +85,7 @@ class CartonOcrController extends Controller
             return response()->json([
                 'data' => [
                     'tpins' => $tpins,
+                    'recognizedText' => trim($text),
                     'total' => count($tpins),
                     'imageToken' => $imageToken,
                 ],
@@ -98,6 +116,7 @@ class CartonOcrController extends Controller
         return response()->json([
             'data' => [
                 'cartons' => $availableCartons,
+                'recognizedText' => trim($text),
                 'total' => count($availableCartons),
                 'imageToken' => $imageToken,
             ],
