@@ -338,22 +338,17 @@ function renderSuccess() {
     const entry = state.savedEntry;
     const isCarton = entry.type === 'carton';
     const products = isCarton ? `<div class="mt-4 border-t border-slate-100 pt-4"><div class="text-xs text-slate-500">Products</div>${entry.products.map((product) => `<div class="mt-2 flex justify-between gap-4 text-sm"><strong>${escapeHtml(product.tpin)}</strong><span>Quantity <strong>${product.quantity}</strong></span></div>`).join('')}</div>` : `<div class="mt-4 flex justify-between border-t border-slate-100 pt-4"><span class="text-sm text-slate-500">Actual quantity</span><strong>${entry.quantity}</strong></div>`;
-    const generatedCarton = !isCarton
-        ? `<div class="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2"><div><div class="text-xs text-slate-500">Carton ID</div><strong class="mt-1 block text-lg">${escapeHtml(entry.cartonId)}</strong></div><div><div class="text-xs text-slate-500">Carton Number</div><strong class="mt-1 block text-lg text-blue-700">${escapeHtml(entry.cartonNumber)}</strong></div></div>`
-        : '';
+    const details = isCarton
+        ? `<div class="mt-7 rounded-2xl bg-white p-5 text-left shadow-sm">${currentLocation()}<div class="mt-4"><div class="text-xs text-slate-500">Carton Number</div><strong class="mt-1 block text-xl">${escapeHtml(entry.code)}</strong></div>${products}</div>`
+        : `<div class="mt-7 rounded-2xl bg-white p-5 text-left shadow-sm"><div class="flex items-center gap-2 rounded-xl bg-slate-100 px-4 py-3"><span class="text-blue-600">${icons.location}</span><span class="text-slate-500">Location:</span><strong class="text-blue-700">${escapeHtml(state.selectedLocation)}</strong></div><div class="mt-5"><div class="text-sm text-slate-500">Carton Number</div><strong class="mt-1 block break-all text-2xl text-blue-700">${escapeHtml(entry.cartonNumber)}</strong><div class="mt-2 text-lg"><span class="text-slate-500">Carton ID:</span> <strong>${escapeHtml(entry.cartonId)}</strong></div></div><div class="mt-5 flex items-end justify-between gap-4 border-t border-slate-200 pt-5"><div><div class="text-sm text-slate-500">TPIN</div><strong class="mt-1 block text-xl">${escapeHtml(entry.code)}</strong></div><div class="text-right"><div class="text-sm text-slate-500">Qty</div><strong class="mt-1 grid h-14 min-w-16 place-items-center rounded-xl bg-blue-50 px-4 text-3xl text-blue-700">${entry.quantity}</strong></div></div></div>`;
 
     return shell(`
         <div class="mx-auto max-w-xl py-6 text-center sm:py-12">
             <div class="mx-auto grid h-28 w-28 place-items-center rounded-full bg-emerald-100 text-emerald-600 ring-12 ring-emerald-50">${icons.check}</div>
             <h1 class="mt-7 text-3xl font-bold">Saved Successfully</h1>
             <p class="mt-2 text-slate-500">${isCarton ? 'Carton' : 'TPIN'} Saved</p>
-            <div class="mt-7 rounded-2xl bg-white p-5 text-left shadow-sm">
-                ${currentLocation()}
-                <div class="mt-4"><div class="text-xs text-slate-500">${isCarton ? 'Carton Number' : 'TPIN'}</div><strong class="mt-1 block text-xl">${escapeHtml(entry.code)}</strong></div>
-                ${generatedCarton}
-                ${products}
-            </div>
-            <div class="mt-5 grid gap-3">${button('Continue Scanning', 'continue-scanning')}${button('Complete Location', 'complete-location', { secondary: true })}</div>
+            ${details}
+            <div class="mt-5 grid gap-3"><button type="button" data-action="continue-scanning" class="min-h-14 rounded-xl bg-blue-600 px-5 py-3 text-lg font-bold text-white shadow-sm transition hover:bg-blue-700">Continue Scanning</button><button type="button" data-action="complete-location" class="min-h-14 rounded-xl border-2 border-blue-600 bg-white px-5 py-3 text-lg font-bold text-blue-700 transition hover:bg-blue-50">Complete Location</button></div>
         </div>`, { title: 'Saved' });
 }
 
