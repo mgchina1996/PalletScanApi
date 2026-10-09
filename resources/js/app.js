@@ -307,35 +307,34 @@ function renderResults() {
 function renderCount() {
     const isCarton = state.scanType === 'carton';
     const code = isCarton ? state.selectedCandidate.cartonNumber : state.selectedCandidate;
-    const pendingNotice = isCarton && state.pendingCartonEntry
-        ? `<div class="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="status"><strong class="block">This carton has already been recorded at the current location.</strong><span class="mt-1 block">The products and quantities recorded on ${escapeHtml(formatDate(state.pendingCartonEntry.createdAt))} are shown below.</span></div>`
+    const duplicateNotice = isCarton && state.pendingCartonEntry
+        ? `<div class="mt-4 flex items-center gap-3 rounded-xl bg-amber-50 px-4 py-3 font-bold text-amber-700" role="status"><svg viewBox="0 0 24 24" class="h-6 w-6 shrink-0" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v6m0 4h.01"/></svg><span>Already recorded at this location.</span></div>`
         : '';
     const previousEntry = isCarton && state.pendingCartonEntry
-        ? `<section class="mt-5 rounded-2xl border border-amber-200 bg-white p-4 shadow-sm sm:p-5"><h2 class="text-lg font-bold">Previously recorded products</h2><div class="mt-3 grid gap-2 sm:grid-cols-2">${state.pendingCartonEntry.products.map((product) => `<div class="flex items-center justify-between rounded-xl bg-amber-50 px-4 py-3 text-sm"><strong>${escapeHtml(product.tpin)}</strong><span>Quantity <strong class="text-amber-900">${product.quantity}</strong></span></div>`).join('')}</div><label class="mt-4 flex cursor-pointer items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3"><input id="overwrite-existing-carton" type="checkbox" ${state.overwriteExistingCarton ? 'checked' : ''} class="h-5 w-5 accent-blue-600"><span><strong class="block text-blue-900">Overwrite the previous entry</strong><span class="text-sm text-blue-700">Clear this checkbox to save a new entry instead.</span></span></label></section>`
+        ? `<section class="mt-5 rounded-2xl bg-white p-4 shadow-sm sm:p-6"><div class="flex items-center justify-between gap-4"><h2 class="text-xl font-bold">Previous Entry</h2><span class="text-sm text-slate-500">${escapeHtml(formatShortDate(state.pendingCartonEntry.createdAt))}</span></div><div class="mt-4 overflow-hidden rounded-xl border border-slate-200"><div class="grid grid-cols-[1fr_auto] bg-slate-100 px-4 py-3 text-sm font-bold text-slate-500"><span>TPIN</span><span>Quantity</span></div>${state.pendingCartonEntry.products.map((product) => `<div class="grid grid-cols-[1fr_auto] items-center border-t border-slate-200 px-4 py-4"><strong class="truncate text-lg">${escapeHtml(product.tpin)}</strong><strong class="text-xl">${product.quantity}</strong></div>`).join('')}</div><label class="mt-4 flex cursor-pointer items-start gap-3"><input id="overwrite-existing-carton" type="checkbox" ${state.overwriteExistingCarton ? 'checked' : ''} class="mt-0.5 h-6 w-6 shrink-0 accent-blue-600"><span><strong class="block text-base">Overwrite previous entry</strong><span class="text-sm text-slate-500">Uncheck to save as a new entry.</span></span></label></section>`
         : '';
     const productFields = state.products.map((product) => `
         <label class="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4">
             <span class="min-w-0 flex-1"><span class="block text-xs text-slate-500">TPIN</span><strong class="block truncate text-lg">${escapeHtml(product.tpin)}</strong></span>
-            <span class="w-28"><span class="block text-xs text-slate-500">Actual quantity</span><input data-product-tpin="${escapeHtml(product.tpin)}" type="number" min="0" step="1" inputmode="numeric" value="${escapeHtml(state.quantities[product.tpin] ?? '')}" class="mt-1 h-11 w-full rounded-lg border border-slate-300 px-3 text-lg font-bold outline-none focus:border-blue-500 focus:ring-3 focus:ring-blue-100"></span>
+            <span class="w-28"><span class="block text-xs text-slate-500">Quantity</span><input data-product-tpin="${escapeHtml(product.tpin)}" type="number" min="0" step="1" inputmode="numeric" value="${escapeHtml(state.quantities[product.tpin] ?? '')}" class="mt-1 h-11 w-full rounded-lg border border-slate-300 px-3 text-lg font-bold outline-none focus:border-blue-500 focus:ring-3 focus:ring-blue-100"></span>
         </label>`).join('');
 
     return shell(`
         <div class="mx-auto max-w-3xl pb-28">
             ${alertMessage()}
-            ${pendingNotice}
             <div class="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
-                ${currentLocation()}
-                <div class="mt-4 rounded-xl border border-slate-200 p-4"><div class="text-xs text-slate-500">${isCarton ? 'Carton Number' : 'TPIN'}</div><div class="mt-1 text-xl font-bold">${escapeHtml(code)}</div></div>
+                <div class="text-sm text-slate-500">${isCarton ? 'Carton Number' : 'TPIN'}</div><div class="mt-1 text-2xl font-bold">${escapeHtml(code)}</div>
+                ${duplicateNotice}
             </div>
             ${previousEntry}
             <section class="mt-5">
-                <div class="mb-3"><h2 class="text-lg font-bold">${isCarton ? 'Products in this carton' : 'Actual quantity'}</h2><p class="text-sm text-slate-500">${isCarton ? 'Enter at least one quantity greater than 0. Enter 0 or leave blank to skip a product.' : 'Enter the quantity physically counted at this location.'}</p></div>
+                <div class="mb-3"><h2 class="text-xl font-bold">${isCarton ? 'Current Quantities' : 'Actual quantity'}</h2><p class="text-sm text-slate-500">${isCarton ? 'Enter the actual quantity for each product. Enter 0 or leave blank to skip.' : 'Enter the quantity physically counted at this location.'}</p></div>
                 ${isCarton ? `<div class="grid gap-3 sm:grid-cols-2">${productFields}</div>` : `<div class="rounded-2xl bg-white p-5 shadow-sm"><label class="text-sm font-semibold" for="single-quantity">Actual quantity</label><input id="single-quantity" type="number" min="1" step="1" inputmode="numeric" value="${escapeHtml(state.quantity)}" class="mt-2 h-14 w-full rounded-xl border border-slate-300 px-4 text-xl font-bold outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"></div>`}
             </section>
         </div>
         <div class="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 py-3 shadow-[0_-8px_24px_rgba(15,23,42,.08)] backdrop-blur sm:px-6">
             <div class="mx-auto grid max-w-3xl grid-cols-2 gap-2">${button('Back', 'back', { secondary: true })}${button(state.busy ? 'Saving…' : isCarton ? 'Save Carton' : 'Save', 'save-entry', { disabled: state.busy })}</div>
-        </div>`, { title: isCarton ? 'Carton Product Quantities' : 'TPIN Entry', back: true, subtitle: state.selectedLocation });
+        </div>`, { title: isCarton ? 'Carton Quantities' : 'TPIN Entry', back: true, subtitle: state.selectedLocation });
 }
 
 function renderSuccess() {
@@ -624,6 +623,15 @@ async function loadEntry(id) {
 function formatDate(value) {
     if (!value) return '';
     return value.slice(0, 10) + '  ' + value.slice(11, 16);
+}
+
+function formatShortDate(value) {
+    if (!value) return '';
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const month = months[Number(value.slice(5, 7)) - 1] ?? '';
+    const day = Number(value.slice(8, 10));
+
+    return `${month} ${day}, ${value.slice(11, 16)}`;
 }
 
 function goBack() {
