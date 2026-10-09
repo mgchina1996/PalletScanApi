@@ -27,6 +27,7 @@ class StoreCartonEntriesRequest extends FormRequest
             'products.*.tpin' => ['required', 'string', 'max:255'],
             'products.*.quantity' => ['required', 'integer', 'min:1'],
             'imageToken' => ['nullable', 'string', 'max:4096'],
+            'overwriteExisting' => ['sometimes', 'boolean'],
         ];
     }
 

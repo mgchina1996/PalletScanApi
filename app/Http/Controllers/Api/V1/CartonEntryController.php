@@ -39,7 +39,7 @@ class CartonEntryController extends Controller
 
     public function store(StoreCartonEntriesRequest $request, OssImageStorage $imageStorage): JsonResponse
     {
-        /** @var array{locationCode: string, cartonNumber: int|string, products: list<array{tpin: string, quantity: int}>, imageToken?: string|null} $data */
+        /** @var array{locationCode: string, cartonNumber: int|string, products: list<array{tpin: string, quantity: int}>, imageToken?: string|null, overwriteExisting?: bool} $data */
         $data = $request->validated();
         $imagePath = null;
         $replacedImagePath = null;
@@ -47,14 +47,18 @@ class CartonEntryController extends Controller
         try {
             $entry = DB::transaction(function () use ($data, $imageStorage, &$imagePath, &$replacedImagePath): Entry {
                 $cartonNumber = strtoupper((string) $data['cartonNumber']);
-                $entry = Entry::query()
-                    ->where('location_code', $data['locationCode'])
-                    ->where('type', Entry::TYPE_CARTON)
-                    ->where('code', $cartonNumber)
-                    ->where('stock_generated', false)
-                    ->latest('id')
-                    ->lockForUpdate()
-                    ->first();
+                $entry = null;
+
+                if ($data['overwriteExisting'] ?? true) {
+                    $entry = Entry::query()
+                        ->where('location_code', $data['locationCode'])
+                        ->where('type', Entry::TYPE_CARTON)
+                        ->where('code', $cartonNumber)
+                        ->where('stock_generated', false)
+                        ->latest('id')
+                        ->lockForUpdate()
+                        ->first();
+                }
 
                 if ($entry === null) {
                     $entry = Entry::create([

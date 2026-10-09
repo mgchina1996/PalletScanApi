@@ -17,6 +17,7 @@ const state = {
     products: [],
     quantities: {},
     pendingCartonEntry: null,
+    overwriteExistingCarton: true,
     quantity: '',
     savedEntry: null,
     records: [],
@@ -190,6 +191,7 @@ function resetScan() {
     state.products = [];
     state.quantities = {};
     state.pendingCartonEntry = null;
+    state.overwriteExistingCarton = true;
     state.quantity = '';
     state.error = '';
 }
@@ -306,7 +308,10 @@ function renderCount() {
     const isCarton = state.scanType === 'carton';
     const code = isCarton ? state.selectedCandidate.cartonNumber : state.selectedCandidate;
     const pendingNotice = isCarton && state.pendingCartonEntry
-        ? `<div class="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="status"><strong class="block">This carton has already been recorded at the current location.</strong><span class="mt-1 block">The previous quantities from ${escapeHtml(formatDate(state.pendingCartonEntry.createdAt))} are shown below. Saving will overwrite that record.</span></div>`
+        ? `<div class="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="status"><strong class="block">This carton has already been recorded at the current location.</strong><span class="mt-1 block">The products and quantities recorded on ${escapeHtml(formatDate(state.pendingCartonEntry.createdAt))} are shown below.</span></div>`
+        : '';
+    const previousEntry = isCarton && state.pendingCartonEntry
+        ? `<section class="mt-5 rounded-2xl border border-amber-200 bg-white p-4 shadow-sm sm:p-5"><h2 class="text-lg font-bold">Previously recorded products</h2><div class="mt-3 grid gap-2 sm:grid-cols-2">${state.pendingCartonEntry.products.map((product) => `<div class="flex items-center justify-between rounded-xl bg-amber-50 px-4 py-3 text-sm"><strong>${escapeHtml(product.tpin)}</strong><span>Quantity <strong class="text-amber-900">${product.quantity}</strong></span></div>`).join('')}</div><label class="mt-4 flex cursor-pointer items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3"><input id="overwrite-existing-carton" type="checkbox" ${state.overwriteExistingCarton ? 'checked' : ''} class="h-5 w-5 accent-blue-600"><span><strong class="block text-blue-900">Overwrite the previous entry</strong><span class="text-sm text-blue-700">Clear this checkbox to save a new entry instead.</span></span></label></section>`
         : '';
     const productFields = state.products.map((product) => `
         <label class="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4">
@@ -322,6 +327,7 @@ function renderCount() {
                 ${currentLocation()}
                 <div class="mt-4 rounded-xl border border-slate-200 p-4"><div class="text-xs text-slate-500">${isCarton ? 'Carton Number' : 'TPIN'}</div><div class="mt-1 text-xl font-bold">${escapeHtml(code)}</div></div>
             </div>
+            ${previousEntry}
             <section class="mt-5">
                 <div class="mb-3"><h2 class="text-lg font-bold">${isCarton ? 'Products in this carton' : 'Actual quantity'}</h2><p class="text-sm text-slate-500">${isCarton ? 'Enter at least one quantity greater than 0. Enter 0 or leave blank to skip a product.' : 'Enter the quantity physically counted at this location.'}</p></div>
                 ${isCarton ? `<div class="grid gap-3 sm:grid-cols-2">${productFields}</div>` : `<div class="rounded-2xl bg-white p-5 shadow-sm"><label class="text-sm font-semibold" for="single-quantity">Actual quantity</label><input id="single-quantity" type="number" min="1" step="1" inputmode="numeric" value="${escapeHtml(state.quantity)}" class="mt-2 h-14 w-full rounded-xl border border-slate-300 px-4 text-xl font-bold outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"></div>`}
@@ -477,6 +483,7 @@ async function confirmResult() {
         });
         const pendingResponse = await api(`/api/v1/entries/cartons/pending?${pendingParams}`);
         state.pendingCartonEntry = pendingResponse.data;
+        state.overwriteExistingCarton = true;
 
         const previousProducts = state.pendingCartonEntry?.products ?? [];
         const products = [...carton.products];
@@ -543,6 +550,7 @@ async function saveEntry() {
             cartonNumber: state.selectedCandidate.cartonNumber,
             products,
             imageToken: state.imageToken || undefined,
+            overwriteExisting: state.pendingCartonEntry ? state.overwriteExistingCarton : false,
         };
     } else {
         const quantity = positiveInteger(state.quantity);
@@ -728,6 +736,7 @@ app.addEventListener('input', (event) => {
         state.selectedCandidate = null;
     }
     if (event.target.id === 'single-quantity') state.quantity = event.target.value;
+    if (event.target.id === 'overwrite-existing-carton') state.overwriteExistingCarton = event.target.checked;
     if (event.target.dataset.productTpin) state.quantities[event.target.dataset.productTpin] = event.target.value;
     if (event.target.id === 'record-search') {
         state.recordSearch = event.target.value;
