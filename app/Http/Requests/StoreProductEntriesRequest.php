@@ -20,6 +20,7 @@ class StoreProductEntriesRequest extends FormRequest
             'locationCode' => ['required', 'string', 'max:255'],
             'tpin' => ['required', 'string', 'max:255'],
             'quantity' => ['required', 'integer', 'min:1'],
+            'imageToken' => ['nullable', 'string', 'max:4096'],
         ];
     }
 }

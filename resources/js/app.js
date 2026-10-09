@@ -9,6 +9,7 @@ const state = {
     scanType: 'carton',
     photoFile: null,
     photoUrl: '',
+    imageToken: '',
     candidates: [],
     selectedCandidate: null,
     manualCode: '',
@@ -180,6 +181,7 @@ function resetScan() {
     if (state.photoUrl) URL.revokeObjectURL(state.photoUrl);
     state.photoFile = null;
     state.photoUrl = '';
+    state.imageToken = '';
     state.candidates = [];
     state.selectedCandidate = null;
     state.manualCode = '';
@@ -424,6 +426,7 @@ async function recognize(file) {
         data.append('type', state.scanType);
         data.append('image', uploadFile);
         const response = await api('/api/v1/ocr/carton', { method: 'POST', body: data });
+        state.imageToken = response.data.imageToken;
         state.candidates = state.scanType === 'carton' ? response.data.cartons : response.data.tpins;
         state.selectedCandidate = state.candidates.length === 1 ? state.candidates[0] : null;
         setScreen('results');
@@ -511,7 +514,12 @@ async function saveEntry() {
             return;
         }
 
-        body = { locationCode: state.selectedLocation, cartonNumber: state.selectedCandidate.cartonNumber, products };
+        body = {
+            locationCode: state.selectedLocation,
+            cartonNumber: state.selectedCandidate.cartonNumber,
+            products,
+            imageToken: state.imageToken || undefined,
+        };
     } else {
         const quantity = positiveInteger(state.quantity);
         if (quantity === null) {
@@ -519,7 +527,12 @@ async function saveEntry() {
             render();
             return;
         }
-        body = { locationCode: state.selectedLocation, tpin: state.selectedCandidate, quantity };
+        body = {
+            locationCode: state.selectedLocation,
+            tpin: state.selectedCandidate,
+            quantity,
+            imageToken: state.imageToken || undefined,
+        };
     }
 
     state.busy = true;

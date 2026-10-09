@@ -32,6 +32,13 @@ return [
         'credentials' => env('GOOGLE_VISION_CREDENTIALS'),
     ],
 
+    'aliyun_oss' => [
+        'access_key_id' => env('ALIYUN_OSS_ACCESS_KEY_ID'),
+        'access_key_secret' => env('ALIYUN_OSS_ACCESS_KEY_SECRET'),
+        'endpoint' => env('ALIYUN_OSS_ENDPOINT'),
+        'bucket' => env('ALIYUN_OSS_BUCKET'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

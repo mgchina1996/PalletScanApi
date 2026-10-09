@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Api\V1;
 use App\Contracts\CartonTextRecognizer;
 use App\Exceptions\OcrConfigurationException;
 use App\Exceptions\OcrRecognitionException;
+use App\Exceptions\OssConfigurationException;
+use App\Exceptions\OssStorageException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RecognizeCartonImageRequest;
 use App\Models\Entry;
+use App\Services\OssImageStorage;
 use App\Services\PortalCartonAvailabilityLookup;
 use Illuminate\Http\JsonResponse;
 
@@ -17,6 +20,7 @@ class CartonOcrController extends Controller
         RecognizeCartonImageRequest $request,
         CartonTextRecognizer $recognizer,
         PortalCartonAvailabilityLookup $cartonLookup,
+        OssImageStorage $imageStorage,
     ): JsonResponse {
         $path = $request->file('image')->getRealPath();
         $imageBytes = $path === false ? false : file_get_contents($path);
@@ -39,6 +43,21 @@ class CartonOcrController extends Controller
 
         $normalizedText = strtoupper($text);
 
+        try {
+            $imageToken = $imageStorage->uploadTemporary(
+                $imageBytes,
+                $request->file('image')->getMimeType() ?: 'image/jpeg',
+            );
+        } catch (OssConfigurationException $exception) {
+            report($exception);
+
+            return response()->json(['message' => 'Image storage is not configured.'], 503);
+        } catch (OssStorageException $exception) {
+            report($exception);
+
+            return response()->json(['message' => 'Unable to upload the image.'], 502);
+        }
+
         if ($request->string('type')->toString() === Entry::TYPE_TPIN) {
             preg_match_all('/(?<![A-Z0-9])[A-Z0-9]{9}(?![A-Z0-9])/', $normalizedText, $tpinMatches);
             $tpins = array_values(array_unique(array_filter(
@@ -50,6 +69,7 @@ class CartonOcrController extends Controller
                 'data' => [
                     'tpins' => $tpins,
                     'total' => count($tpins),
+                    'imageToken' => $imageToken,
                 ],
             ]);
         }
@@ -79,6 +99,7 @@ class CartonOcrController extends Controller
             'data' => [
                 'cartons' => $availableCartons,
                 'total' => count($availableCartons),
+                'imageToken' => $imageToken,
             ],
         ]);
     }
