@@ -16,6 +16,7 @@ const state = {
     isManualEntry: false,
     products: [],
     quantities: {},
+    pendingCartonEntry: null,
     quantity: '',
     savedEntry: null,
     records: [],
@@ -188,6 +189,7 @@ function resetScan() {
     state.isManualEntry = false;
     state.products = [];
     state.quantities = {};
+    state.pendingCartonEntry = null;
     state.quantity = '';
     state.error = '';
 }
@@ -303,6 +305,9 @@ function renderResults() {
 function renderCount() {
     const isCarton = state.scanType === 'carton';
     const code = isCarton ? state.selectedCandidate.cartonNumber : state.selectedCandidate;
+    const pendingNotice = isCarton && state.pendingCartonEntry
+        ? `<div class="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="status"><strong class="block">This carton has already been recorded at the current location.</strong><span class="mt-1 block">The previous quantities from ${escapeHtml(formatDate(state.pendingCartonEntry.createdAt))} are shown below. Saving will overwrite that record.</span></div>`
+        : '';
     const productFields = state.products.map((product) => `
         <label class="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-4">
             <span class="min-w-0 flex-1"><span class="block text-xs text-slate-500">TPIN</span><strong class="block truncate text-lg">${escapeHtml(product.tpin)}</strong></span>
@@ -312,6 +317,7 @@ function renderCount() {
     return shell(`
         <div class="mx-auto max-w-3xl pb-28">
             ${alertMessage()}
+            ${pendingNotice}
             <div class="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
                 ${currentLocation()}
                 <div class="mt-4 rounded-xl border border-slate-200 p-4"><div class="text-xs text-slate-500">${isCarton ? 'Carton Number' : 'TPIN'}</div><div class="mt-1 text-xl font-bold">${escapeHtml(code)}</div></div>
@@ -464,8 +470,26 @@ async function confirmResult() {
         const carton = response.data?.[0];
         if (!carton || !carton.products?.length) throw new Error('This carton has no products. Check the Carton Number and try again.');
         state.selectedCandidate = { cartonID: carton.cartonID, cartonNumber: carton.cartonNumber };
-        state.products = carton.products;
-        state.quantities = Object.fromEntries(carton.products.map((product) => [product.tpin, '']));
+
+        const pendingParams = new URLSearchParams({
+            locationCode: state.selectedLocation,
+            cartonNumber: carton.cartonNumber,
+        });
+        const pendingResponse = await api(`/api/v1/entries/cartons/pending?${pendingParams}`);
+        state.pendingCartonEntry = pendingResponse.data;
+
+        const previousProducts = state.pendingCartonEntry?.products ?? [];
+        const products = [...carton.products];
+
+        previousProducts.forEach((previousProduct) => {
+            if (!products.some((product) => product.tpin === previousProduct.tpin)) {
+                products.push({ tpin: previousProduct.tpin });
+            }
+        });
+
+        const previousQuantities = Object.fromEntries(previousProducts.map((product) => [product.tpin, product.quantity]));
+        state.products = products;
+        state.quantities = Object.fromEntries(products.map((product) => [product.tpin, previousQuantities[product.tpin] ?? '']));
         setScreen('count');
     } catch (error) {
         state.error = error.message;

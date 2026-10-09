@@ -17,6 +17,8 @@ Route::prefix('v1')->name('api.v1.')->group(function (): void {
     Route::get('cartons/products', CartonProductController::class)
         ->name('cartons.products.index');
     Route::get('entries', EntryController::class)->name('entries.index');
+    Route::get('entries/cartons/pending', [CartonEntryController::class, 'pending'])
+        ->name('entries.cartons.pending');
     Route::get('entries/{entry}', EntryDetailController::class)
         ->whereNumber('entry')
         ->name('entries.show');

@@ -2,31 +2,29 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreCartonEntriesRequest extends FormRequest
+class FindPendingCartonEntryRequest extends FormRequest
 {
+    /**
+     * Determine if the user is authorized to make this request.
+     */
     public function authorize(): bool
     {
         return true;
     }
 
     /**
-     * @return array<string, array<mixed>>
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         return [
             'locationCode' => ['required', 'string', 'max:255'],
-            'cartonNumber' => [
-                'required',
-                'regex:/\A(?:CTN[A-Z0-9]+|[0-9]{5,6})\z/i',
-            ],
-            'products' => ['required', 'array', 'min:1'],
-            'products.*' => ['required', 'array:tpin,quantity'],
-            'products.*.tpin' => ['required', 'string', 'max:255'],
-            'products.*.quantity' => ['required', 'integer', 'min:1'],
-            'imageToken' => ['nullable', 'string', 'max:4096'],
+            'cartonNumber' => ['required', 'string', 'max:255'],
         ];
     }
 
