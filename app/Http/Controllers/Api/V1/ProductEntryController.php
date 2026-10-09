@@ -46,6 +46,7 @@ class ProductEntryController extends Controller
                     $carton = $cartonCreator->create();
                     $entry->carton_id = (int) $carton->CartonID;
                     $entry->save();
+                    $entry->setAttribute('carton_number', (string) $carton->CartonNumber);
                 }
 
                 return $entry;

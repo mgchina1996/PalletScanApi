@@ -338,6 +338,9 @@ function renderSuccess() {
     const entry = state.savedEntry;
     const isCarton = entry.type === 'carton';
     const products = isCarton ? `<div class="mt-4 border-t border-slate-100 pt-4"><div class="text-xs text-slate-500">Products</div>${entry.products.map((product) => `<div class="mt-2 flex justify-between gap-4 text-sm"><strong>${escapeHtml(product.tpin)}</strong><span>Quantity <strong>${product.quantity}</strong></span></div>`).join('')}</div>` : `<div class="mt-4 flex justify-between border-t border-slate-100 pt-4"><span class="text-sm text-slate-500">Actual quantity</span><strong>${entry.quantity}</strong></div>`;
+    const generatedCarton = !isCarton
+        ? `<div class="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2"><div><div class="text-xs text-slate-500">Carton ID</div><strong class="mt-1 block text-lg">${escapeHtml(entry.cartonId)}</strong></div><div><div class="text-xs text-slate-500">Carton Number</div><strong class="mt-1 block text-lg text-blue-700">${escapeHtml(entry.cartonNumber)}</strong></div></div>`
+        : '';
 
     return shell(`
         <div class="mx-auto max-w-xl py-6 text-center sm:py-12">
@@ -347,6 +350,7 @@ function renderSuccess() {
             <div class="mt-7 rounded-2xl bg-white p-5 text-left shadow-sm">
                 ${currentLocation()}
                 <div class="mt-4"><div class="text-xs text-slate-500">${isCarton ? 'Carton Number' : 'TPIN'}</div><strong class="mt-1 block text-xl">${escapeHtml(entry.code)}</strong></div>
+                ${generatedCarton}
                 ${products}
             </div>
             <div class="mt-5 grid gap-3">${button('Continue Scanning', 'continue-scanning')}${button('Complete Location', 'complete-location', { secondary: true })}</div>
@@ -568,10 +572,16 @@ async function saveEntry() {
 
     try {
         const url = state.scanType === 'carton' ? '/api/v1/entries/cartons' : '/api/v1/entries/products/tpin';
-        await api(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const response = await api(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         state.savedEntry = state.scanType === 'carton'
             ? { type: 'carton', code: body.cartonNumber, products: body.products }
-            : { type: 'tpin', code: body.tpin, quantity: body.quantity };
+            : {
+                type: 'tpin',
+                code: body.tpin,
+                quantity: body.quantity,
+                cartonId: response.data.carton_id,
+                cartonNumber: response.data.carton_number,
+            };
         setScreen('success');
     } catch (error) {
         state.error = error.message;

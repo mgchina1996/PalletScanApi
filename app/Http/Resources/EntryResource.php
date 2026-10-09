@@ -21,6 +21,8 @@ class EntryResource extends JsonResource
             'code' => $this->code,
             'quantity' => $this->quantity,
             'image_path' => $this->image_path,
+            'carton_id' => $this->carton_id,
+            'carton_number' => $this->carton_number,
             'products' => $this->whenLoaded('products', fn (): array => $this->products->map(fn ($product): array => [
                 'id' => $product->id,
                 'tpin' => $product->tpin,
