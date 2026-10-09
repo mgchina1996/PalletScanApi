@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('sku');
             $table->string('approval', 50)->nullable();
             $table->smallInteger('status')->nullable();
-            $table->smallInteger('visibility')->nullable();
+            $table->string('visibility')->nullable();
             $table->decimal('price', 18, 4)->nullable();
             $table->decimal('special_price', 18, 4)->nullable();
             $table->boolean('has_image');

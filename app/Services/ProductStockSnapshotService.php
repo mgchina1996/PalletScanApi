@@ -85,7 +85,7 @@ class ProductStockSnapshotService
                 'sku' => $row->sku,
                 'approval' => $row->approval,
                 'status' => $row->status !== null ? (int) $row->status : null,
-                'visibility' => $row->visibility !== null ? (int) $row->visibility : null,
+                'visibility' => $row->visibility !== null ? (string) $row->visibility : null,
                 'price' => $row->price,
                 'special_price' => $row->special_price,
                 'has_image' => (bool) $row->has_image,

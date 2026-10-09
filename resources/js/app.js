@@ -84,19 +84,8 @@ function shell(content, options = {}) {
                     <a href="/manual/" class="rounded-lg px-3 py-2 text-sm font-semibold text-blue-100 hover:bg-white/10 hover:text-white">Guide</a>
                 </div>
             </header>
-            <main class="mx-auto w-full max-w-6xl px-3 py-4 sm:px-6 sm:py-6 ${options.nav ? 'pb-28' : 'pb-8'}">${content}</main>
-            ${options.nav ? bottomNav(options.nav) : ''}
+            <main class="mx-auto w-full max-w-6xl px-3 py-4 pb-8 sm:px-6 sm:py-6">${content}</main>
         </div>`;
-}
-
-function bottomNav(active) {
-    return `
-        <nav class="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 shadow-[0_-8px_24px_rgba(15,23,42,.08)] backdrop-blur">
-            <div class="mx-auto grid h-18 max-w-xl grid-cols-2">
-                <button type="button" data-action="show-locations" class="grid place-items-center gap-0.5 text-xs font-semibold ${active === 'locations' ? 'text-blue-600' : 'text-slate-500'}"><span>${icons.location}</span>Locations</button>
-                <button type="button" data-action="show-records" class="grid place-items-center gap-0.5 text-xs font-semibold ${active === 'records' ? 'text-blue-600' : 'text-slate-500'}"><span>${icons.records}</span>Records</button>
-            </div>
-        </nav>`;
 }
 
 function alertMessage() {
@@ -240,7 +229,7 @@ function renderLocations() {
         <section class="mt-4">
             ${state.busy ? loading('Loading pallet locations') : locations.length ? `<div class="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">${cards}</div>` : '<div class="rounded-2xl bg-white p-12 text-center shadow-sm"><strong>No pallet locations found</strong><p class="mt-2 text-sm text-slate-500">Try a different section or search term.</p></div>'}
         </section>
-        <div class="sticky bottom-20 mt-5 flex items-center gap-4 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-xl backdrop-blur sm:bottom-24">
+        <div class="sticky bottom-4 mt-5 flex items-center gap-4 rounded-2xl border border-slate-200 bg-white/95 p-4 shadow-xl backdrop-blur">
             <div class="min-w-0 flex-1"><div class="text-xs text-slate-500">Selected location</div><div class="truncate text-xl font-bold">${escapeHtml(state.selectedLocation || 'Select one')}</div></div>
             ${button('Start', 'start-scan', { disabled: !state.selectedLocation })}
         </div>`;
