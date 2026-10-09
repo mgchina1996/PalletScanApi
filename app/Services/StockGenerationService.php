@@ -18,11 +18,7 @@ class StockGenerationService
 {
     private const LOCATION_ID = 22;
 
-    private const WAREHOUSE_ID = 3;
-
-    private const CONFIRMED_BY = 491;
-
-    private const POSITION = 1;
+    public function __construct(private readonly PortalCartonCreator $cartonCreator) {}
 
     /**
      * Process a single entry and generate stock in the portal system.
@@ -159,7 +155,7 @@ class StockGenerationService
     }
 
     /**
-     * Tpin type: always create a new carton, bin, line confirm and inventory detail.
+     * Tpin type: reuse its carton, then create a bin, line confirm and inventory detail.
      */
     private function processTpinType(Entry $entry, string $operationId): void
     {
@@ -179,15 +175,15 @@ class StockGenerationService
             );
         }
 
-        [$carton, $bin, $inventoryDetail] = DB::connection('portal')->transaction(function () use ($entry, $itemId): array {
-            $carton = Carton::create([
-                'CartonNumber' => $this->getNewCartonNumber(),
-                'Position' => self::POSITION,
-                'IsConfirmed' => true,
-                'WarehouseID' => self::WAREHOUSE_ID,
-                'ConfirmedBy' => self::CONFIRMED_BY,
-                'ConfirmedOn' => now('UTC'),
-            ]);
+        $carton = $entry->carton_id !== null
+            ? Carton::query()->find($entry->carton_id)
+            : $this->cartonCreator->create();
+
+        if ($carton === null) {
+            throw new \RuntimeException("Carton not found in portal for CartonID: {$entry->carton_id}");
+        }
+
+        [$bin, $inventoryDetail] = DB::connection('portal')->transaction(function () use ($entry, $itemId, $carton): array {
 
             $bin = Bin::create([
                 'BinNumber' => $entry->location_code.'-'.$carton->CartonID,
@@ -215,7 +211,7 @@ class StockGenerationService
 
             $this->markItemStockForSync((int) $itemId);
 
-            return [$carton, $bin, $inventoryDetail];
+            return [$bin, $inventoryDetail];
         });
 
         DB::transaction(function () use ($entry, $carton, $bin, $itemId, $operationId, $inventoryDetail): void {
@@ -243,18 +239,6 @@ class StockGenerationService
             $entry->error = null;
             $entry->save();
         });
-    }
-
-    /**
-     * Generate a unique carton number.
-     */
-    private function getNewCartonNumber(): string
-    {
-        do {
-            $random = 'CTN'.strtoupper(Str::random(8));
-        } while (Carton::where('CartonNumber', $random)->exists());
-
-        return $random;
     }
 
     /**

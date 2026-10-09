@@ -10,6 +10,7 @@ use App\Http\Requests\StoreProductEntriesRequest;
 use App\Http\Resources\EntryResource;
 use App\Models\Entry;
 use App\Services\OssImageStorage;
+use App\Services\PortalCartonCreator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
@@ -17,14 +18,18 @@ use Throwable;
 
 class ProductEntryController extends Controller
 {
-    public function store(StoreProductEntriesRequest $request, string $type, OssImageStorage $imageStorage): JsonResponse
-    {
+    public function store(
+        StoreProductEntriesRequest $request,
+        string $type,
+        OssImageStorage $imageStorage,
+        PortalCartonCreator $cartonCreator,
+    ): JsonResponse {
         /** @var array{locationCode: string, tpin: string, quantity: int, imageToken?: string|null} $data */
         $data = $request->validated();
         $imagePath = null;
 
         try {
-            $entry = DB::transaction(function () use ($data, $type, $imageStorage, &$imagePath): Entry {
+            $entry = DB::transaction(function () use ($data, $type, $imageStorage, $cartonCreator, &$imagePath): Entry {
                 $entry = Entry::create([
                     'location_code' => $data['locationCode'],
                     'type' => $type,
@@ -35,6 +40,12 @@ class ProductEntryController extends Controller
                 if (! empty($data['imageToken'])) {
                     $imagePath = $imageStorage->promote($data['imageToken'], $entry->id);
                     $entry->update(['image_path' => $imagePath]);
+                }
+
+                if ($type === Entry::TYPE_TPIN) {
+                    $carton = $cartonCreator->create();
+                    $entry->carton_id = (int) $carton->CartonID;
+                    $entry->save();
                 }
 
                 return $entry;
