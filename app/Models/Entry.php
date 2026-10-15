@@ -26,6 +26,13 @@ class Entry extends Model
         'image_path',
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'is_deleted' => 'boolean',
+        ];
+    }
+
     public function products(): HasMany
     {
         return $this->hasMany(EntryProduct::class);
