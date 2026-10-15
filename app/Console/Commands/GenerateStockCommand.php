@@ -7,6 +7,7 @@ use App\Services\StockGenerationService;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
+use Illuminate\Database\Eloquent\Builder;
 
 #[Signature('stock:generate')]
 #[Description('Generate stock in the portal system for entries with stock_generated=false')]
@@ -17,7 +18,15 @@ class GenerateStockCommand extends Command
      */
     public function handle(StockGenerationService $service): int
     {
-        $entries = Entry::where('stock_generated', false)->whereNull('error')->orderBy('id')->get();
+        $entries = Entry::where('stock_generated', false)
+            ->whereNull('error')
+            ->where(function (Builder $query): void {
+                foreach (['S1', 'S2', 'S3', 'S4', 'S5', 'S6'] as $locationPrefix) {
+                    $query->orWhere('location_code', 'like', $locationPrefix.'-%');
+                }
+            })
+            ->orderBy('id')
+            ->get();
 
         if ($entries->isEmpty()) {
             $this->info('No pending entries to process.');
