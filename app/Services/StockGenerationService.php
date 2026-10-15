@@ -10,6 +10,7 @@ use App\Models\Portal\Item;
 use App\Models\Portal\ItemExtend;
 use App\Models\Portal\RealtimeInventoryDetail;
 use App\Models\StockGenerationLog;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Throwable;
@@ -24,6 +25,24 @@ class StockGenerationService
      * Process a single entry and generate stock in the portal system.
      */
     public function generate(Entry $entry): void
+    {
+        $lock = Cache::lock('stock-entry:'.$entry->id, 600);
+        if (! $lock->get()) {
+            throw new \RuntimeException('此记录正在生成库存，请稍后刷新。');
+        }
+
+        try {
+            $entry->refresh();
+            if ($entry->stock_generated || $entry->is_deleted) {
+                return;
+            }
+            $this->generateEntry($entry);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function generateEntry(Entry $entry): void
     {
         $operationId = Str::uuid()->toString();
 

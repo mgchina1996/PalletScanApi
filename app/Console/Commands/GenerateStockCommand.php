@@ -19,7 +19,10 @@ class GenerateStockCommand extends Command
     public function handle(StockGenerationService $service): int
     {
         $entries = Entry::where('stock_generated', false)
-            ->whereNull('error')
+            ->where('is_deleted', false)
+            ->where(function (Builder $query): void {
+                $query->whereNull('error')->orWhere('error', '');
+            })
             ->where(function (Builder $query): void {
                 foreach (['S1', 'S2', 'S3', 'S4', 'S5', 'S6'] as $locationPrefix) {
                     $query->orWhere('location_code', 'like', $locationPrefix.'-%');
@@ -42,7 +45,14 @@ class GenerateStockCommand extends Command
         foreach ($entries as $entry) {
             $this->info("Entry #{$entry->id} [{$entry->type}] {$entry->code} at {$entry->location_code}");
 
-            $service->generate($entry);
+            try {
+                $service->generate($entry);
+            } catch (\Throwable $exception) {
+                $failed++;
+                $this->error('  -> '.$exception->getMessage());
+
+                continue;
+            }
 
             $entry->refresh();
 

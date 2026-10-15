@@ -14,6 +14,11 @@ return [
     |
     */
 
+    'admin' => [
+        'username' => env('ADMIN_USERNAME', 'admin'),
+        'password_hash' => env('ADMIN_PASSWORD_HASH', ''),
+    ],
+
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],
