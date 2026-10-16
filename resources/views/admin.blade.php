@@ -14,6 +14,7 @@
     'summary' => route('admin.summary'),
     'entries' => route('admin.entries'),
     'detail' => route('admin.show', ['entry' => '__ID__']),
+    'updateCode' => route('admin.update-code', ['entry' => '__ID__']),
     'generate' => route('admin.generate', ['entry' => '__ID__']),
 ]) }}">
     <aside class="sidebar">

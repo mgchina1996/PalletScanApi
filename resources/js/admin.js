@@ -146,11 +146,35 @@ async function openDetail(id) {
         detail.innerHTML = `<div class="dialog-head"><h2>Entry #${row.id}</h2><button class="close" aria-label="关闭">×</button></div><span class="badge">${names[zone]}</span> ${badge(row.status)}
         <div class="detail-grid"><div>${row.imageUrl ? `<a href="${escape(row.imageUrl)}" target="_blank" rel="noopener"><img class="entry-photo" src="${escape(row.imageUrl)}" alt="Entry ${row.id} 图片附件"><p>查看原图 ↗</p></a>` : '<div class="no-photo">暂无图片附件</div>'}</div><div>
         <div class="detail-card"><dl>${[['库位',row.location],['类型',row.type.toUpperCase()],['编码',row.code],['数量',row.quantity ?? '—'],['Carton ID',row.cartonId ?? '—'],['创建时间',row.createdAt],['更新时间',row.updatedAt]].map(([key,value]) => `<dt>${key}</dt><dd>${escape(value)}</dd>`).join('')}</dl></div>
+        ${row.status !== 'success' ? `<form id="edit-code" class="detail-card"><h3>修改编码</h3><div class="code-edit-controls"><input name="code" aria-label="新的编码" value="${escape(row.code)}" maxlength="255" required><button type="submit" class="primary">保存编码</button></div><p class="muted">保存后记录修改前后编码、操作账号和时间。</p><p id="code-error" class="error-box" role="alert" hidden></p></form>` : ''}
         ${row.error ? `<div class="error-box"><strong>报错信息</strong><p>${escape(row.error)}</p></div>` : ''}
         ${row.type === 'carton' ? `<div class="detail-card"><h3>商品明细</h3>${row.inventoryError ? `<p class="error-box">${escape(row.inventoryError)}</p>` : ''}${row.products.length ? `<div class="table-wrap"><table class="inventory-comparison"><thead><tr><th>TPIN</th><th>Quantity On Hand</th><th>Quantity Available</th><th>Quantity Scanned</th></tr></thead><tbody>${row.products.map(product => `<tr><td>${escape(product.tpin)}</td><td>${escape(product.qtyOnHand ?? '—')}</td><td>${escape(product.qtyAvailable ?? '—')}</td><td>${escape(product.quantity)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">暂无商品明细</p>'}</div>` : ''}</div></div>
+        <div class="detail-card"><h3>编码修改记录</h3>${row.codeChanges?.length ? `<div class="table-wrap"><table><thead><tr><th>原编码</th><th>新编码</th><th>操作账号</th><th>时间</th></tr></thead><tbody>${row.codeChanges.map(log => `<tr><td>${escape(log.oldCode)}</td><td>${escape(log.newCode)}</td><td>${escape(log.actor)}</td><td>${escape(log.createdAt)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">暂无修改记录</p>'}</div>
         <div class="detail-card"><h3>处理日志</h3>${row.logs.length ? `<div class="table-wrap"><table class="logs"><thead><tr><th>操作</th><th>TPIN</th><th>库存数量</th><th>Carton / Bin</th></tr></thead><tbody>${row.logs.map(log => `<tr><td>${escape(log.action)}</td><td>${escape(log.tpin)}</td><td>${log.qty_on_hand_before ?? '—'} → ${log.qty_on_hand_after}</td><td>${log.carton_id} / ${log.bin_id}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">尚无库存生成日志</p>'}</div>
         ${zone !== 'exceptions' && row.status !== 'success' ? `<div class="detail-footer"><button class="primary" id="generate-one">${row.status === 'failed' ? '重试生成库存' : '生成此条库存'}</button></div>` : ''}`;
         detail.querySelector('.close').onclick = () => detail.close();
+        detail.querySelector('#edit-code')?.addEventListener('submit', async event => {
+            event.preventDefault();
+            const form = event.currentTarget;
+            const button = form.querySelector('button');
+            const errorBox = form.querySelector('#code-error');
+            const code = form.elements.code.value.trim();
+            if (!code || code === row.code) return;
+            button.disabled = true;
+            errorBox.hidden = true;
+            const generateButton = detail.querySelector('#generate-one');
+            if (generateButton) generateButton.disabled = true;
+            try {
+                await api(urls.updateCode.replace('__ID__', row.id), { method: 'PATCH', body: JSON.stringify({ code, original_code: row.code }) });
+                await loadRows();
+                if (detail.open) await openDetail(row.id);
+            } catch (error) {
+                errorBox.textContent = error.message;
+                errorBox.hidden = false;
+                button.disabled = false;
+                if (generateButton) generateButton.disabled = false;
+            }
+        });
         detail.querySelector('#generate-one')?.addEventListener('click', () => confirmBatch([row]));
     } catch (error) {
         detail.innerHTML = `<div class="dialog-head"><h2>加载失败</h2><button class="close" aria-label="关闭">×</button></div><p class="error-box">${escape(error.message)}</p>`;
