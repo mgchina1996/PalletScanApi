@@ -5,6 +5,8 @@
 .env
 .env.*
 !.env.example
+.user.ini
+**/.user.ini
 node_modules
 vendor
 storage/framework/cache/*
