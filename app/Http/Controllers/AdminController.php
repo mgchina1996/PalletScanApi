@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\AdminEntriesRequest;
+use App\Http\Requests\UpdateEntryCodeRequest;
 use App\Http\Resources\AdminEntryResource;
 use App\Http\Resources\EntryListResource;
 use App\Models\Entry;
@@ -14,6 +15,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use OSS\OssClient;
 use Symfony\Component\HttpFoundation\Response;
@@ -97,6 +99,38 @@ class AdminController extends Controller
         }
 
         return $resource;
+    }
+
+    public function updateCode(UpdateEntryCodeRequest $request, Entry $entry): JsonResponse
+    {
+        $data = $request->validated();
+        $lock = Cache::lock('stock-entry:'.$entry->id, 600);
+        abort_unless($lock->get(), 409, '此记录正在处理，暂时不能修改编码。');
+
+        try {
+            DB::transaction(function () use ($entry, $data, $request): void {
+                $record = Entry::query()->lockForUpdate()->findOrFail($entry->id);
+                abort_if($record->is_deleted, 404);
+                abort_if((bool) $record->stock_generated, 409, '已生成库存的记录不能修改编码。');
+                abort_if($record->code !== $data['original_code'], 409, '编码已被其他操作修改，请重新打开详情。');
+
+                if ($record->code === $data['code']) {
+                    return;
+                }
+
+                $record->codeChangeLogs()->create([
+                    'old_code' => $record->code,
+                    'new_code' => $data['code'],
+                    'actor' => (string) $request->session()->get('admin_username', config('services.admin.username')),
+                ]);
+                $record->code = $data['code'];
+                $record->save();
+            });
+        } finally {
+            $lock->release();
+        }
+
+        return response()->json(['message' => '编码已修改，变更记录已保存。']);
     }
 
     public function generate(Request $request, Entry $entry, AdminEntryService $entries, StockGenerationService $service): JsonResponse

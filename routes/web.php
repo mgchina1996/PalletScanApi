@@ -30,6 +30,7 @@ Route::prefix('admin')->name('admin.')->group(function (): void {
         Route::get('data/entries', [AdminController::class, 'entries'])->name('entries');
         Route::get('data/entries/{entry}', [AdminController::class, 'show'])->whereNumber('entry')->name('show');
         Route::get('data/entries/{entry}/image', [AdminController::class, 'image'])->whereNumber('entry')->name('image');
+        Route::patch('data/entries/{entry}/code', [AdminController::class, 'updateCode'])->whereNumber('entry')->name('update-code');
         Route::post('data/entries/{entry}/generate', [AdminController::class, 'generate'])->whereNumber('entry')->name('generate');
         Route::get('/', [AdminController::class, 'index'])->name('index');
         Route::get('{section}', [AdminController::class, 'index'])->where('section', 'small-parce|ltl|exceptions')->name('section');
