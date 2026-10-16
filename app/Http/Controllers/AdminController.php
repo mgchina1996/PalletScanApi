@@ -34,6 +34,7 @@ class AdminController extends Controller
         }
         $request->session()->regenerate();
         $request->session()->put('admin_authenticated', true);
+        $request->session()->put('admin_username', $data['username']);
 
         return redirect()->route('admin.index');
     }
