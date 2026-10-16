@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\EntryCodeChangeLog;
 use App\Models\EntryProduct;
 use App\Services\AdminEntryService;
 use Illuminate\Http\Request;
@@ -38,6 +39,13 @@ class AdminEntryResource extends JsonResource
                 'qtyAvailable' => $this->inventory[$product->tpin]['qtyAvailable'] ?? null,
             ])),
             'logs' => $this->whenLoaded('stockGenerationLogs'),
+            'codeChanges' => $this->whenLoaded('codeChangeLogs', fn () => $this->codeChangeLogs->map(static fn (EntryCodeChangeLog $log): array => [
+                'id' => $log->id,
+                'oldCode' => $log->old_code,
+                'newCode' => $log->new_code,
+                'actor' => $log->actor,
+                'createdAt' => $log->created_at?->setTimezone(EntryListResource::TIMEZONE)->format('Y-m-d H:i:s'),
+            ])),
         ];
     }
 }

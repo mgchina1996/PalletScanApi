@@ -89,7 +89,7 @@ class AdminController extends Controller
     {
         abort_if($entry->is_deleted, 404);
 
-        $resource = new AdminEntryResource($entry->load(['products', 'stockGenerationLogs' => fn ($query) => $query->orderByDesc('id')]));
+        $resource = new AdminEntryResource($entry->load(['products', 'codeChangeLogs' => fn ($query) => $query->orderByDesc('id'), 'stockGenerationLogs' => fn ($query) => $query->orderByDesc('id')]));
 
         try {
             $resource->inventory = $entries->cartonInventory($entry);
