@@ -6,6 +6,7 @@ use App\Models\Entry;
 use App\Models\Portal\Bin;
 use App\Models\Portal\Carton;
 use App\Models\Portal\CartonLineConfirm;
+use App\Models\Portal\CartonTransferLog;
 use App\Models\Portal\Item;
 use App\Models\Portal\ItemExtend;
 use App\Models\Portal\RealtimeInventoryDetail;
@@ -47,6 +48,10 @@ class StockGenerationService
         $operationId = Str::uuid()->toString();
 
         try {
+            if (in_array(explode('-', $entry->location_code, 2)[0], ['N1', 'N2', 'N3'], true) && $entry->type !== Entry::TYPE_CARTON) {
+                throw new \RuntimeException('N1–N3 库位仅支持 Carton 类型。');
+            }
+
             if ($entry->type === Entry::TYPE_CARTON) {
                 $this->processCartonType($entry, $operationId);
             } elseif (in_array($entry->type, [Entry::TYPE_TPIN, Entry::TYPE_SKU], true)) {
@@ -68,6 +73,11 @@ class StockGenerationService
     private function processCartonType(Entry $entry, string $operationId): void
     {
         $entry->load('products');
+        $isLtl = in_array(explode('-', $entry->location_code, 2)[0], ['N1', 'N2', 'N3'], true);
+
+        if ($isLtl && $entry->products->isEmpty()) {
+            throw new \RuntimeException('LTL Carton 没有录入商品明细，无法调整库存。');
+        }
 
         $carton = Carton::where('CartonNumber', $entry->code)->first();
         if ($carton === null) {
@@ -83,9 +93,39 @@ class StockGenerationService
             $itemIds[$product->tpin] = $itemId;
         }
 
-        $logs = DB::connection('portal')->transaction(function () use ($entry, $carton, $itemIds): array {
+        $logs = DB::connection('portal')->transaction(function () use ($entry, $carton, $itemIds, $isLtl): array {
             $binNumber = $entry->location_code.'-'.$carton->CartonID;
-            $bin = Bin::where('CartonID', $carton->CartonID)->first();
+            if ($isLtl) {
+                $bin = Bin::where('CartonID', $carton->CartonID)
+                    ->where('IsDynamic', 1)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($bin === null) {
+                    throw new \RuntimeException("Dynamic Bin not found for CartonID: {$carton->CartonID}");
+                }
+
+                if ((int) $bin->LocationID !== self::LOCATION_ID) {
+                    throw new \RuntimeException("Carton Bin LocationID must be 22, actual: {$bin->LocationID}");
+                }
+
+                $fromBinNumber = $bin->BinNumber;
+                if ($fromBinNumber !== $binNumber) {
+                    $bin->update(['BinNumber' => $binNumber]);
+
+                    CartonTransferLog::create([
+                        'BinID' => $bin->BinID,
+                        'FromBinNumber' => $fromBinNumber,
+                        'CartonID' => $bin->CartonID,
+                        'LocationID' => $bin->LocationID,
+                        'ToBinNumber' => $binNumber,
+                        'CreatedBy' => 588,
+                        'CreatedOn' => now('UTC'),
+                    ]);
+                }
+            } else {
+                $bin = Bin::where('CartonID', $carton->CartonID)->first();
+            }
 
             if ($bin === null) {
                 $bin = Bin::create([
@@ -108,7 +148,12 @@ class StockGenerationService
 
                 $detail = RealtimeInventoryDetail::where('BinId', $bin->BinID)
                     ->where('ItemId', $itemId)
+                    ->lockForUpdate()
                     ->first();
+
+                if ($isLtl && $detail === null) {
+                    throw new \RuntimeException("Inventory not found for BinID: {$bin->BinID}, TPIN: {$product->tpin}");
+                }
 
                 if ($detail === null) {
                     $detail = RealtimeInventoryDetail::create([
