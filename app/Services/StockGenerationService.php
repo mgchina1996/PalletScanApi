@@ -68,7 +68,7 @@ class StockGenerationService
 
     /**
      * Carton type: look up the existing carton by CartonNumber, then update
-     * matching RealtimeInventoryDetail rows.
+     * all RealtimeInventoryDetail rows, clearing products omitted from the entry.
      */
     private function processCartonType(Entry $entry, string $operationId): void
     {
@@ -141,27 +141,61 @@ class StockGenerationService
                 ]);
             }
 
-            $records = [];
+            $inventoryDetails = RealtimeInventoryDetail::query()
+                ->join('Bin as b', 'b.BinID', '=', 'portal_realtime_inventory_detail.BinId')
+                ->join('Carton as c', 'c.CartonID', '=', 'b.CartonID')
+                ->join('Item as i', 'i.ItemID', '=', 'portal_realtime_inventory_detail.ItemId')
+                ->where('c.CartonNumber', $entry->code)
+                ->select('portal_realtime_inventory_detail.*', 'i.TPIN')
+                ->lockForUpdate()
+                ->get();
 
+            $productsByItemId = [];
             foreach ($entry->products as $product) {
-                $itemId = $itemIds[$product->tpin];
+                $productsByItemId[$itemIds[$product->tpin]] = $product;
+            }
 
-                $detail = RealtimeInventoryDetail::where('BinId', $bin->BinID)
-                    ->where('ItemId', $itemId)
-                    ->lockForUpdate()
-                    ->first();
+            $adjustments = [];
+            foreach ($inventoryDetails as $detail) {
+                $product = $productsByItemId[$detail->ItemId] ?? null;
+                $adjustments[] = [
+                    'detail' => $detail,
+                    'item_id' => (int) $detail->ItemId,
+                    'tpin' => (string) $detail->TPIN,
+                    'quantity' => $product !== null ? (int) $product->quantity : 0,
+                ];
+            }
 
-                if ($isLtl && $detail === null) {
-                    throw new \RuntimeException("Inventory not found for BinID: {$bin->BinID}, TPIN: {$product->tpin}");
+            foreach ($productsByItemId as $itemId => $product) {
+                if ($inventoryDetails->contains('ItemId', $itemId)) {
+                    continue;
                 }
+
+                if ($isLtl) {
+                    throw new \RuntimeException("Inventory not found for CartonID: {$carton->CartonID}, TPIN: {$product->tpin}");
+                }
+
+                $adjustments[] = [
+                    'detail' => null,
+                    'item_id' => (int) $itemId,
+                    'tpin' => $product->tpin,
+                    'quantity' => (int) $product->quantity,
+                ];
+            }
+
+            $records = [];
+            foreach ($adjustments as $adjustment) {
+                $detail = $adjustment['detail'];
+                $itemId = $adjustment['item_id'];
+                $quantity = $adjustment['quantity'];
 
                 if ($detail === null) {
                     $detail = RealtimeInventoryDetail::create([
                         'ItemId' => $itemId,
                         'LocationId' => self::LOCATION_ID,
                         'BinId' => $bin->BinID,
-                        'QtyOnHand' => $product->quantity,
-                        'QtyAvailable' => $product->quantity,
+                        'QtyOnHand' => $quantity,
+                        'QtyAvailable' => $quantity,
                         'CreationTime' => now('UTC'),
                         'LastModificationTime' => now('UTC'),
                     ]);
@@ -173,8 +207,8 @@ class StockGenerationService
                     $beforeAvailable = $detail->QtyAvailable;
 
                     $detail->update([
-                        'QtyOnHand' => $product->quantity,
-                        'QtyAvailable' => $product->quantity,
+                        'QtyOnHand' => $quantity,
+                        'QtyAvailable' => $quantity,
                         'LastModificationTime' => now('UTC'),
                     ]);
                     $action = 'updated';
@@ -189,16 +223,16 @@ class StockGenerationService
                     'code' => $entry->code,
                     'action' => $action,
                     'carton_id' => (int) $bin->CartonID,
-                    'bin_id' => (int) $bin->BinID,
+                    'bin_id' => (int) $detail->BinId,
                     'item_id' => (int) $itemId,
                     'inventory_detail_id' => $detail->Id,
-                    'tpin' => $product->tpin,
+                    'tpin' => $adjustment['tpin'],
                     'location_code' => $entry->location_code,
-                    'quantity' => $product->quantity,
+                    'quantity' => $quantity,
                     'qty_on_hand_before' => $beforeOnHand !== null ? (int) $beforeOnHand : null,
-                    'qty_on_hand_after' => (int) $product->quantity,
+                    'qty_on_hand_after' => (int) $quantity,
                     'qty_available_before' => $beforeAvailable !== null ? (int) $beforeAvailable : null,
-                    'qty_available_after' => (int) $product->quantity,
+                    'qty_available_after' => (int) $quantity,
                 ];
             }
 
