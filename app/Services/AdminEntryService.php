@@ -36,7 +36,7 @@ class AdminEntryService
     /** @return list<string> */
     public function prefixes(string $zone): array
     {
-        return $zone === 'small-parce' ? ['S1', 'S2', 'S3', 'S4', 'S5', 'S6'] : ['N1', 'N2', 'N3'];
+        return $zone === 'small-parce' ? ['S1', 'S2', 'S3', 'S4', 'S5', 'S6'] : ['N1', 'N2', 'N3', 'N4'];
     }
 
     /** @return Builder<Entry> */

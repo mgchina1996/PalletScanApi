@@ -55,7 +55,7 @@ function sectionUrl(section) {
 function overview() {
     content.innerHTML = `<h1>Entries 管理</h1><p class="muted">按业务分区核对扫描记录，生成 Portal 库存。</p>
         <div class="overview-grid">${['small-parce', 'ltl'].map(key => `<article class="zone-card ${key === 'ltl' ? 'ltl' : ''}">
-            <header><span class="zone-icon" aria-hidden="true">${key === 'ltl' ? '▱' : '▣'}</span><div><h2>${names[key]}</h2><p>${key === 'ltl' ? 'N1 – N3' : 'S1 – S6'}</p><p>${key === 'ltl' ? 'Carton' : 'Carton / SKU / TPIN'}</p></div></header>
+            <header><span class="zone-icon" aria-hidden="true">${key === 'ltl' ? '▱' : '▣'}</span><div><h2>${names[key]}</h2><p>${key === 'ltl' ? 'N1 – N4' : 'S1 – S6'}</p><p>${key === 'ltl' ? 'Carton' : 'Carton / SKU / TPIN'}</p></div></header>
             <footer><div class="stats">${Object.entries(labels).map(([status, label]) => `<div class="stat ${status}">${label}<strong>${summary[key][status]}</strong></div>`).join('')}</div><a class="primary" data-section="${key}" href="${sectionUrl(key)}">进入 ${names[key]} →</a></footer></article>`).join('')}</div>
         <div class="exception-banner"><span aria-hidden="true">⚠</span><div><h3>数据异常 · ${summary.exceptions}</h3><p>库位或类型不符合分区规则的记录，不能直接生成库存。</p></div><a data-section="exceptions" href="${sectionUrl('exceptions')}">查看 →</a></div>`;
 }
@@ -64,8 +64,8 @@ function option(value, label, key) {
 }
 function renderList() {
     const exceptions = zone === 'exceptions';
-    const prefixes = zone === 'small-parce' ? ['S1','S2','S3','S4','S5','S6'] : ['N1','N2','N3'];
-    content.innerHTML = `<div class="page-heading"><div><h1>${names[zone]} <span class="zone-tag">${exceptions ? '' : zone === 'ltl' ? 'N1 – N3' : 'S1 – S6'}</span></h1><p>${exceptions ? '库位或类型不符合规则，仅供查看。' : zone === 'ltl' ? 'Carton 库存处理' : 'Carton、SKU、TPIN 库存处理'}</p></div>${exceptions ? '' : '<button class="primary" id="generate-selected" disabled>生成所选库存</button>'}</div>
+    const prefixes = zone === 'small-parce' ? ['S1','S2','S3','S4','S5','S6'] : ['N1','N2','N3','N4'];
+    content.innerHTML = `<div class="page-heading"><div><h1>${names[zone]} <span class="zone-tag">${exceptions ? '' : zone === 'ltl' ? 'N1 – N4' : 'S1 – S6'}</span></h1><p>${exceptions ? '库位或类型不符合规则，仅供查看。' : zone === 'ltl' ? 'Carton 库存处理' : 'Carton、SKU、TPIN 库存处理'}</p></div>${exceptions ? '' : '<button class="primary" id="generate-selected" disabled>生成所选库存</button>'}</div>
         ${exceptions ? '' : `<div class="tabs">${Object.entries(labels).map(([status,label]) => `<button class="tab ${filters.status === status ? 'active' : ''}" data-status="${status}">${label}<b>${summary[zone][status]}</b></button>`).join('')}</div>`}
         <section class="panel"><form class="filters" id="filters">
         <label>状态<select name="status">${option('all','全部','status')}${Object.entries(labels).map(([key,label]) => option(key,label,'status')).join('')}</select></label>

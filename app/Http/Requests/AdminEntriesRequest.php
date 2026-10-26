@@ -18,7 +18,7 @@ class AdminEntriesRequest extends FormRequest
             'zone' => ['required', 'in:small-parce,ltl,exceptions'],
             'status' => ['sometimes', 'in:all,pending,failed,success'],
             'type' => ['nullable', 'in:carton,sku,tpin'],
-            'prefix' => ['nullable', 'in:S1,S2,S3,S4,S5,S6,N1,N2,N3'],
+            'prefix' => ['nullable', 'in:S1,S2,S3,S4,S5,S6,N1,N2,N3,N4'],
             'location' => ['nullable', 'string', 'max:16'],
             'code' => ['nullable', 'string', 'max:255'],
             'from' => ['nullable', 'date_format:Y-m-d'],

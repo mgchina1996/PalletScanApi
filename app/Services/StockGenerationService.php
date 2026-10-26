@@ -48,8 +48,8 @@ class StockGenerationService
         $operationId = Str::uuid()->toString();
 
         try {
-            if (in_array(explode('-', $entry->location_code, 2)[0], ['N1', 'N2', 'N3'], true) && $entry->type !== Entry::TYPE_CARTON) {
-                throw new \RuntimeException('N1–N3 库位仅支持 Carton 类型。');
+            if (in_array(explode('-', $entry->location_code, 2)[0], ['N1', 'N2', 'N3', 'N4'], true) && $entry->type !== Entry::TYPE_CARTON) {
+                throw new \RuntimeException('N1–N4 库位仅支持 Carton 类型。');
             }
 
             if ($entry->type === Entry::TYPE_CARTON) {
@@ -73,7 +73,7 @@ class StockGenerationService
     private function processCartonType(Entry $entry, string $operationId): void
     {
         $entry->load('products');
-        $isLtl = in_array(explode('-', $entry->location_code, 2)[0], ['N1', 'N2', 'N3'], true);
+        $isLtl = in_array(explode('-', $entry->location_code, 2)[0], ['N1', 'N2', 'N3', 'N4'], true);
 
         if ($isLtl && $entry->products->isEmpty()) {
             throw new \RuntimeException('LTL Carton 没有录入商品明细，无法调整库存。');

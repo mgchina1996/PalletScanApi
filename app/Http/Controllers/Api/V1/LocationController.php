@@ -12,7 +12,7 @@ class LocationController extends Controller
 {
     public function __invoke(): AnonymousResourceCollection
     {
-        $locations = Cache::rememberForever('pallet-locations:v1', function (): array {
+        $locations = Cache::rememberForever('pallet-locations:v2', function (): array {
             $locations = [];
 
             for ($section = 1; $section <= 6; $section++) {
@@ -28,7 +28,8 @@ class LocationController extends Controller
             $portalBins = Bin::where(function ($query) {
                 $query->where('BinNumber', 'LIKE', 'N1%')
                     ->orWhere('BinNumber', 'LIKE', 'N2%')
-                    ->orWhere('BinNumber', 'LIKE', 'N3%');
+                    ->orWhere('BinNumber', 'LIKE', 'N3%')
+                    ->orWhere('BinNumber', 'LIKE', 'N4%');
             })
                 ->where('IsDynamic', 0)
                 ->where('LocationID', 22)
