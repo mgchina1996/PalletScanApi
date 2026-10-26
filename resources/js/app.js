@@ -200,7 +200,7 @@ function renderLocations() {
     const sectionButtons = [
         { key: '', label: 'All' },
         ...[1, 2, 3, 4, 5, 6].map((n) => ({ key: `S${n}-`, label: `S${n}` })),
-        ...[1, 2, 3].map((n) => ({ key: `N${n}-`, label: `N${n}` })),
+        ...[1, 2, 3, 4].map((n) => ({ key: `N${n}-`, label: `N${n}` })),
     ].map(({ key, label }) => {
         const active = key === '' ? !query : query === key;
         return `<button type="button" data-section="${key}" class="min-h-9 rounded-lg px-3 text-sm font-bold transition ${active ? 'bg-blue-600 text-white shadow-sm' : 'border border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:text-blue-700'}">${label}</button>`;
