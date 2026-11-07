@@ -135,7 +135,7 @@ class AdminController extends Controller
 
     public function generate(Request $request, Entry $entry, AdminEntryService $entries, StockGenerationService $service): JsonResponse
     {
-        $data = $request->validate(['zone' => ['required', 'in:small-parce,ltl']]);
+        $data = $request->validate(['zone' => ['required', 'in:small-parce,ltl,exceptions']]);
         $lock = Cache::lock('stock-generation:'.$entry->id, 600);
         abort_unless($lock->get(), 409, '此记录正在处理，请稍后刷新。');
 

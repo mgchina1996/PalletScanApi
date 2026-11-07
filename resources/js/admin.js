@@ -57,7 +57,7 @@ function overview() {
         <div class="overview-grid">${['small-parce', 'ltl'].map(key => `<article class="zone-card ${key === 'ltl' ? 'ltl' : ''}">
             <header><span class="zone-icon" aria-hidden="true">${key === 'ltl' ? '▱' : '▣'}</span><div><h2>${names[key]}</h2><p>${key === 'ltl' ? 'N1 – N4' : 'S1 – S6'}</p><p>${key === 'ltl' ? 'Carton' : 'Carton / SKU / TPIN'}</p></div></header>
             <footer><div class="stats">${Object.entries(labels).map(([status, label]) => `<div class="stat ${status}">${label}<strong>${summary[key][status]}</strong></div>`).join('')}</div><a class="primary" data-section="${key}" href="${sectionUrl(key)}">进入 ${names[key]} →</a></footer></article>`).join('')}</div>
-        <div class="exception-banner"><span aria-hidden="true">⚠</span><div><h3>数据异常 · ${summary.exceptions}</h3><p>库位或类型不符合分区规则的记录，不能直接生成库存。</p></div><a data-section="exceptions" href="${sectionUrl('exceptions')}">查看 →</a></div>`;
+        <div class="exception-banner"><span aria-hidden="true">⚠</span><div><h3>数据异常 · ${summary.exceptions}</h3><p>库位或类型不符合分区规则的记录，可进入核对后生成库存。</p></div><a data-section="exceptions" href="${sectionUrl('exceptions')}">查看 →</a></div>`;
 }
 function option(value, label, key) {
     return `<option value="${value}" ${String(filters[key] ?? '') === String(value) ? 'selected' : ''}>${label}</option>`;
@@ -65,7 +65,7 @@ function option(value, label, key) {
 function renderList() {
     const exceptions = zone === 'exceptions';
     const prefixes = zone === 'small-parce' ? ['S1','S2','S3','S4','S5','S6'] : ['N1','N2','N3','N4'];
-    content.innerHTML = `<div class="page-heading"><div><h1>${names[zone]} <span class="zone-tag">${exceptions ? '' : zone === 'ltl' ? 'N1 – N4' : 'S1 – S6'}</span></h1><p>${exceptions ? '库位或类型不符合规则，仅供查看。' : zone === 'ltl' ? 'Carton 库存处理' : 'Carton、SKU、TPIN 库存处理'}</p></div>${exceptions ? '' : '<button class="primary" id="generate-selected" disabled>生成所选库存</button>'}</div>
+    content.innerHTML = `<div class="page-heading"><div><h1>${names[zone]} <span class="zone-tag">${exceptions ? '' : zone === 'ltl' ? 'N1 – N4' : 'S1 – S6'}</span></h1><p>${exceptions ? '库位或类型不符合分区规则，请核对所选记录后生成库存。' : zone === 'ltl' ? 'Carton 库存处理' : 'Carton、SKU、TPIN 库存处理'}</p></div><button class="primary" id="generate-selected" disabled>生成所选库存</button></div>
         ${exceptions ? '' : `<div class="tabs">${Object.entries(labels).map(([status,label]) => `<button class="tab ${filters.status === status ? 'active' : ''}" data-status="${status}">${label}<b>${summary[zone][status]}</b></button>`).join('')}</div>`}
         <section class="panel"><form class="filters" id="filters">
         <label>状态<select name="status">${option('all','全部','status')}${Object.entries(labels).map(([key,label]) => option(key,label,'status')).join('')}</select></label>
@@ -77,7 +77,7 @@ function renderList() {
         <button type="button" class="date-trigger" data-date-picker aria-haspopup="dialog" aria-expanded="false" aria-controls="admin-date-popover"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg><span><small>ENTRY DATE</small><strong>${filters.from ? escape(filters.from === filters.to ? filters.from : `${filters.from} – ${filters.to}`) : 'All Dates'}</strong></span><span class="date-chevron">⌄</span></button>
         <div class="filter-actions"><button class="primary" type="submit">查询</button><button type="button" id="reset">重置</button></div>
         </form><div class="table-toolbar"><span id="selection-count">已选 0 条</span><span>时间：America/Los_Angeles · 已删除记录不显示</span></div>
-        <div class="table-wrap"><table><thead><tr><th><input type="checkbox" id="select-all" aria-label="选择当前页可处理记录" ${exceptions ? 'disabled' : ''}></th><th>ID</th><th>库位</th><th>类型</th><th>编码</th><th>数量</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead><tbody id="rows"><tr><td colspan="9" class="empty">正在加载…</td></tr></tbody></table></div><div id="pagination" class="pagination"></div></section>`;
+        <div class="table-wrap"><table><thead><tr><th><input type="checkbox" id="select-all" aria-label="选择当前页可处理记录"></th><th>ID</th><th>库位</th><th>类型</th><th>编码</th><th>数量</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead><tbody id="rows"><tr><td colspan="9" class="empty">正在加载…</td></tr></tbody></table></div><div id="pagination" class="pagination"></div></section>`;
     attachDatePicker(document.querySelector('#filters'), app.dataset.today);
     document.querySelector('#filters').addEventListener('submit', event => {
         event.preventDefault();
@@ -117,16 +117,15 @@ async function loadRows() {
     }
 }
 function paintRows() {
-    const exceptions = zone === 'exceptions';
     document.querySelector('#rows').innerHTML = rows.length ? rows.map(row => `<tr class="${selected.has(row.id) ? 'selected' : ''}">
-        <td><input type="checkbox" data-select="${row.id}" aria-label="选择 Entry ${row.id}" ${selected.has(row.id) ? 'checked' : ''} ${exceptions || row.status === 'success' ? 'disabled' : ''}></td>
+        <td><input type="checkbox" data-select="${row.id}" aria-label="选择 Entry ${row.id}" ${selected.has(row.id) ? 'checked' : ''} ${row.status === 'success' ? 'disabled' : ''}></td>
         <td>${row.id}</td><td>${escape(row.location)}</td><td>${escape(row.type.toUpperCase())}</td><td>${escape(row.code)}</td><td>${row.quantity ?? '—'}</td><td>${badge(row.status)}</td><td>${escape(row.createdAt)}</td><td><button class="text-button" data-detail="${row.id}">查看</button></td></tr>`).join('') : '<tr><td colspan="9" class="empty">没有符合筛选条件的记录。</td></tr>';
     document.querySelectorAll('[data-select]').forEach(input => { input.onchange = () => { const id = Number(input.dataset.select); input.checked ? selected.add(id) : selected.delete(id); paintRows(); }; });
     document.querySelectorAll('[data-detail]').forEach(button => { button.onclick = () => openDetail(button.dataset.detail); });
     document.querySelector('#selection-count').textContent = `已选 ${selected.size} 条`;
     const eligible = rows.filter(row => row.status !== 'success');
     const all = document.querySelector('#select-all');
-    all.disabled = exceptions || !eligible.length;
+    all.disabled = !eligible.length;
     all.checked = eligible.length > 0 && selected.size === eligible.length;
     all.indeterminate = selected.size > 0 && selected.size < eligible.length;
     const generate = document.querySelector('#generate-selected');
@@ -182,7 +181,7 @@ async function openDetail(id) {
     }
 }
 function confirmBatch(entries) {
-    if (running || !entries.length || zone === 'exceptions') return;
+    if (running || !entries.length) return;
     const counts = entries.reduce((result,row) => { result[row.type] = (result[row.type] ?? 0) + 1; return result; }, {});
     batch.innerHTML = `<h2>确认生成库存</h2><p>将处理 <strong>${names[zone]}</strong> 的 <strong>${entries.length}</strong> 条记录：</p><p>${Object.entries(counts).map(([type,count]) => `${type.toUpperCase()} ${count} 条`).join('、')}</p><p class="muted">确认后将写入 Portal 库存，已有库存数量可能被更新。处理期间请保持页面打开。</p><div class="dialog-actions"><button id="cancel-batch">取消</button><button class="primary" id="start-batch">确认生成</button></div>`;
     batch.showModal();
