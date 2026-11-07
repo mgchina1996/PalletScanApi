@@ -48,10 +48,6 @@ class StockGenerationService
         $operationId = Str::uuid()->toString();
 
         try {
-            if (in_array(explode('-', $entry->location_code, 2)[0], ['N1', 'N2', 'N3', 'N4'], true) && $entry->type !== Entry::TYPE_CARTON) {
-                throw new \RuntimeException('N1–N4 库位仅支持 Carton 类型。');
-            }
-
             if ($entry->type === Entry::TYPE_CARTON) {
                 $this->processCartonType($entry, $operationId);
             } elseif (in_array($entry->type, [Entry::TYPE_TPIN, Entry::TYPE_SKU], true)) {
