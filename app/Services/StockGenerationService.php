@@ -164,10 +164,6 @@ class StockGenerationService
                     continue;
                 }
 
-                if ($isLtl) {
-                    throw new \RuntimeException("Inventory not found for CartonID: {$carton->CartonID}, TPIN: {$product->tpin}");
-                }
-
                 $adjustments[] = [
                     'detail' => null,
                     'item_id' => (int) $itemId,
