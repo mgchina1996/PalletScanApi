@@ -98,13 +98,12 @@ class StockGenerationService
                     ->first();
 
                 if ($bin !== null) {
-                    if ((int) $bin->LocationID !== self::LOCATION_ID) {
-                        throw new \RuntimeException("Carton Bin LocationID must be 22, actual: {$bin->LocationID}");
-                    }
-
                     $fromBinNumber = $bin->BinNumber;
-                    if ($fromBinNumber !== $binNumber) {
-                        $bin->update(['BinNumber' => $binNumber]);
+                    if ((int) $bin->LocationID !== self::LOCATION_ID || $fromBinNumber !== $binNumber) {
+                        $bin->update([
+                            'BinNumber' => $binNumber,
+                            'LocationID' => self::LOCATION_ID,
+                        ]);
 
                         CartonTransferLog::create([
                             'BinID' => $bin->BinID,
@@ -201,6 +200,7 @@ class StockGenerationService
                     $beforeAvailable = $detail->QtyAvailable;
 
                     $detail->update([
+                        'LocationId' => self::LOCATION_ID,
                         'QtyOnHand' => $quantity,
                         'QtyAvailable' => $quantity,
                         'LastModificationTime' => now('UTC'),
