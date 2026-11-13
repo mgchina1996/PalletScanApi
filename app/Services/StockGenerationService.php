@@ -97,27 +97,25 @@ class StockGenerationService
                     ->lockForUpdate()
                     ->first();
 
-                if ($bin === null) {
-                    throw new \RuntimeException("Dynamic Bin not found for CartonID: {$carton->CartonID}");
-                }
+                if ($bin !== null) {
+                    if ((int) $bin->LocationID !== self::LOCATION_ID) {
+                        throw new \RuntimeException("Carton Bin LocationID must be 22, actual: {$bin->LocationID}");
+                    }
 
-                if ((int) $bin->LocationID !== self::LOCATION_ID) {
-                    throw new \RuntimeException("Carton Bin LocationID must be 22, actual: {$bin->LocationID}");
-                }
+                    $fromBinNumber = $bin->BinNumber;
+                    if ($fromBinNumber !== $binNumber) {
+                        $bin->update(['BinNumber' => $binNumber]);
 
-                $fromBinNumber = $bin->BinNumber;
-                if ($fromBinNumber !== $binNumber) {
-                    $bin->update(['BinNumber' => $binNumber]);
-
-                    CartonTransferLog::create([
-                        'BinID' => $bin->BinID,
-                        'FromBinNumber' => $fromBinNumber,
-                        'CartonID' => $bin->CartonID,
-                        'LocationID' => $bin->LocationID,
-                        'ToBinNumber' => $binNumber,
-                        'CreatedBy' => 588,
-                        'CreatedOn' => now('UTC'),
-                    ]);
+                        CartonTransferLog::create([
+                            'BinID' => $bin->BinID,
+                            'FromBinNumber' => $fromBinNumber,
+                            'CartonID' => $bin->CartonID,
+                            'LocationID' => $bin->LocationID,
+                            'ToBinNumber' => $binNumber,
+                            'CreatedBy' => 588,
+                            'CreatedOn' => now('UTC'),
+                        ]);
+                    }
                 }
             } else {
                 $bin = Bin::where('CartonID', $carton->CartonID)->first();
